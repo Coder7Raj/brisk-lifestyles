@@ -1,0 +1,7 @@
+﻿User-agent: *
+Allow: /
+Disallow: /search
+Disallow: /wishlist
+Disallow: /login
+Disallow: /register
+Sitemap: https://brisklifestyles.com/sitemap.xml
