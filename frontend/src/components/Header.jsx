@@ -197,20 +197,94 @@ export default function Header({
               <div className="flex items-center gap-3 rounded-2xl bg-[#eeeff9] p-4">
                 <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-white bg-white text-[#37399a]">
                   {user?.avatarUrl && !avatarFailed ? (
-                    <img src={user.avatarUrl} alt={`${user.displayName} profile`} className="h-full w-full object-cover" onError={() => setAvatarFailed(true)} />
-                  ) : <UserRound size={22} />}
+                    <img
+                      src={user.avatarUrl}
+                      alt={`${user.displayName} profile`}
+                      className="h-full w-full object-cover"
+                      onError={() => setAvatarFailed(true)}
+                    />
+                  ) : (
+                    <UserRound size={22} />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  {user ? <><b className="block truncate text-sm text-[#191943]">{user.displayName}</b><span className="text-xs text-[#77788d]">{user.email}</span></> : <><b className="block text-sm text-[#191943]">Welcome to Brisk Lifestyles</b><span className="text-xs text-[#77788d]">Sign in to access your account.</span></>}
+                  {user ? (
+                    <>
+                      <b className="block truncate text-sm text-[#191943]">
+                        {user.displayName}
+                      </b>
+                      <span className="text-xs text-[#77788d]">
+                        {user.email}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <b className="block text-sm text-[#191943]">
+                        Welcome to Brisk Lifestyles
+                      </b>
+                      <span className="text-xs text-[#77788d]">
+                        Sign in to access your account.
+                      </span>
+                    </>
+                  )}
                 </div>
-                {user ? <button className="rounded-full border border-[#353793] px-3 py-2 text-xs font-semibold text-[#353793]" onClick={() => { setMobile(false); onLogout?.(); }}>Sign out</button> : <a className="rounded-full bg-[#353793] px-4 py-2.5 text-xs font-semibold text-white" href={routeForLabel("Sign in")} onClick={() => setMobile(false)}>Sign in</a>}
+                {user ? (
+                  <button
+                    className="rounded-full border border-[#353793] px-3 py-2 text-xs font-semibold text-[#353793]"
+                    onClick={() => {
+                      setMobile(false);
+                      onLogout?.();
+                    }}
+                  >
+                    Sign out
+                  </button>
+                ) : (
+                  <a
+                    className="rounded-full bg-[#353793] px-4 py-2.5 text-xs font-semibold text-white"
+                    href={routeForLabel("Sign in")}
+                    onClick={() => setMobile(false)}
+                  >
+                    Sign in
+                  </a>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <a className="flex items-center justify-center gap-2 rounded-xl bg-[#353793] px-3 py-3 text-sm font-semibold text-white" href={routeForLabel("Wishlist")} onClick={() => setMobile(false)}><Heart size={17} />Wishlist <b className="grid h-5 w-5 place-items-center rounded-full bg-[#f0c332] text-[11px] text-[#17173f]">{wishlistCount}</b></a>
+                <a
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#353793] px-3 py-3 text-sm font-semibold text-white"
+                  href={routeForLabel("Wishlist")}
+                  onClick={() => setMobile(false)}
+                >
+                  <Heart size={17} />
+                  Wishlist{" "}
+                  <b className="grid h-5 w-5 place-items-center rounded-full bg-[#f0c332] text-[11px] text-[#17173f]">
+                    {wishlistCount}
+                  </b>
+                </a>
               </div>
-              <form className="flex h-11 items-center rounded-full border border-[#e6e5eb] bg-white px-4 text-[#85869b]" onSubmit={(e) => { e.preventDefault(); onSearch(e.currentTarget.elements.query.value); setMobile(false); }}>
-                <input className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#85869b]" name="query" defaultValue={new URLSearchParams(window.location.search).get("q") || ""} placeholder="Search punjabi, perfume..." aria-label="Search products" />
-                <button className="grid h-8 w-8 place-items-center rounded-full text-[#353793]" aria-label="Search" type="submit"><Search size={17} /></button>
+              <form
+                className="flex h-11 items-center rounded-full border border-[#e6e5eb] bg-white px-4 text-[#85869b]"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onSearch(e.currentTarget.elements.query.value);
+                  setMobile(false);
+                }}
+              >
+                <input
+                  className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#85869b]"
+                  name="query"
+                  defaultValue={
+                    new URLSearchParams(window.location.search).get("q") || ""
+                  }
+                  placeholder="Search punjabi, perfume..."
+                  aria-label="Search products"
+                />
+                <button
+                  className="grid h-8 w-8 place-items-center rounded-full text-[#353793]"
+                  aria-label="Search"
+                  type="submit"
+                >
+                  <Search size={17} />
+                </button>
               </form>
             </div>
           )}
