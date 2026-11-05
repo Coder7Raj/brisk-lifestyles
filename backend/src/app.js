@@ -5,8 +5,8 @@ import helmet from "helmet";
 import { config } from "./config.js";
 import { pool } from "./db/pool.js";
 import { errorHandler, notFound } from "./middleware/errors.js";
-import { categoriesRouter } from "./routes/categories.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
+import { categoriesRouter } from "./routes/categories.js";
 import { ordersRouter } from "./routes/orders.js";
 import { productsRouter } from "./routes/products.js";
 
@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: config.webOrigin,
     credentials: true,
-    methods: ["GET", "POST", "DELETE"],
+    methods: ["GET", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type"],
     maxAge: 600,
   }),

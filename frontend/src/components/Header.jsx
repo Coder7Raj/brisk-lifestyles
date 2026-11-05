@@ -38,7 +38,7 @@ export default function Header({
         <a href={routeForLabel("Offers")}>Explore offers</a>
       </div>
       <header className="border-b border-[#e9e6df] bg-white px-[max(calc((100%-1250px)/2),7.4%)] max-[1100px]:px-[1%]">
-        <div className="mx-auto grid h-[76px] max-w-[1250px] grid-cols-[1fr_minmax(280px,560px)_36px_40px_auto] items-center gap-[18px] max-[720px]:h-[64px] max-[720px]:grid-cols-[1fr_40px] max-[720px]:gap-2">
+        <div className="mx-auto grid h-[76px] max-w-[1250px] grid-cols-[1fr_minmax(280px,560px)_36px_40px_auto] items-center gap-[18px] max-[720px]:h-[64px] max-[720px]:grid-cols-[1fr_auto_auto] max-[720px]:gap-2">
           <a
             className="inline-flex w-max items-baseline gap-[5px] text-[30px] font-extrabold tracking-[-.06em] text-[#37399a] max-[720px]:text-[22px]"
             href={routeForLabel("Home")}
@@ -157,12 +157,12 @@ export default function Header({
             )}
           </div>
           <button
-            className="flex h-[54px] items-center gap-2.5 rounded-full bg-[#333799] px-6 text-[15px] text-white max-[720px]:hidden"
+            className="relative flex h-[54px] items-center gap-2.5 rounded-full bg-[#333799] px-6 text-[15px] text-white max-[720px]:h-10 max-[720px]:w-10 max-[720px]:justify-center max-[720px]:gap-0 max-[720px]:p-0"
             onClick={onCart}
           >
             <ShoppingBag size={16} />
-            <span>Cart</span>
-            <b className="grid h-[17px] w-[17px] place-items-center rounded-full bg-[#f0c332] text-[10px] text-[#17173f]">
+            <span className="max-[720px]:hidden">Cart</span>
+            <b className="grid h-[17px] w-[17px] place-items-center rounded-full bg-[#f0c332] text-[10px] text-[#17173f] max-[720px]:absolute max-[720px]:-right-1 max-[720px]:-top-1">
               {cartCount}
             </b>
           </button>
@@ -177,11 +177,11 @@ export default function Header({
         </div>
       </header>
       <nav
-        className="sticky top-0 z-20 border-b border-[#e7e4dc] bg-[#fbfaf7]"
+        className={`sticky top-0 z-20 border-b border-[#e7e4dc] bg-[#fbfaf7] ${mobile ? "max-[720px]:fixed max-[720px]:inset-y-0 max-[720px]:left-0 max-[720px]:z-40 max-[720px]:w-[80vw] max-[720px]:overflow-y-auto max-[720px]:border-r max-[720px]:border-[#e7e4dc] max-[720px]:shadow-[12px_0_36px_#17173f22]" : "max-[720px]:hidden"}`}
         aria-label="Shop categories"
       >
         <div
-          className={`mx-auto flex min-h-[60px] max-w-[1250px] items-center gap-[30px] px-[10px] font-semibold text-[#191943] max-[1100px]:gap-[21px] max-[1100px]:px-[1%] max-[720px]:hidden max-[720px]:min-h-0 max-[720px]:flex-col max-[720px]:items-stretch max-[720px]:gap-0 max-[720px]:py-[10px] ${mobile ? "!flex" : ""}`}
+          className={`mx-auto flex min-h-[60px] max-w-[1250px] items-center gap-[30px] px-[10px] font-semibold text-[#191943] max-[1100px]:gap-[21px] max-[1100px]:px-[1%] max-[720px]:min-h-0 max-[720px]:flex-col max-[720px]:items-stretch max-[720px]:gap-0 max-[720px]:py-[10px] ${mobile ? "!flex" : ""}`}
         >
           {mobile && (
             <div className="hidden max-[720px]:grid max-[720px]:gap-3 max-[720px]:border-b max-[720px]:border-[#e5e2ee] max-[720px]:px-2 max-[720px]:pb-4">
@@ -197,7 +197,6 @@ export default function Header({
                 {user ? <button className="rounded-full border border-[#353793] px-3 py-2 text-xs font-semibold text-[#353793]" onClick={() => { setMobile(false); onLogout?.(); }}>Sign out</button> : <a className="rounded-full bg-[#353793] px-4 py-2.5 text-xs font-semibold text-white" href={routeForLabel("Sign in")} onClick={() => setMobile(false)}>Sign in</a>}
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <button className="flex items-center justify-center gap-2 rounded-xl bg-[#353793] px-3 py-3 text-sm font-semibold text-white" onClick={() => { setMobile(false); onCart(); }}><ShoppingBag size={17} />Cart <b className="grid h-5 w-5 place-items-center rounded-full bg-[#f0c332] text-[11px] text-[#17173f]">{cartCount}</b></button>
                 <a className="flex items-center justify-center gap-2 rounded-xl bg-[#353793] px-3 py-3 text-sm font-semibold text-white" href={routeForLabel("Wishlist")} onClick={() => setMobile(false)}><Heart size={17} />Wishlist <b className="grid h-5 w-5 place-items-center rounded-full bg-[#f0c332] text-[11px] text-[#17173f]">{wishlistCount}</b></a>
               </div>
               <form className="flex h-11 items-center rounded-full border border-[#e6e5eb] bg-white px-4 text-[#85869b]" onSubmit={(e) => { e.preventDefault(); onSearch(e.currentTarget.elements.query.value); setMobile(false); }}>
