@@ -82,6 +82,7 @@ export function resolveRoute(pathname) {
   if (pathname === "/register")
     return { type: "register", title: "Create account" };
   if (pathname === "/checkout") return { type: "checkout", title: "Checkout" };
+  if (pathname === "/admin") return { type: "admin", title: "Product management" };
   if (pathname === "/search") {
     const query =
       new URLSearchParams(window.location.search).get("q")?.trim() || "";

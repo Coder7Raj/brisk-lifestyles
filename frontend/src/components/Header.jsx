@@ -121,6 +121,15 @@ export default function Header({
                   <>
                     <b className="pr-7">{user.displayName}</b>
                     <span className="text-xs text-[#77788d]">{user.email}</span>
+                    {user.role === "admin" && (
+                      <a
+                        className="mt-2 rounded-full border border-[#dedde7] px-4 py-2.5 text-center font-semibold text-[#353793] hover:bg-[#f4f3f8]"
+                        href="/admin"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Product management
+                      </a>
+                    )}
                     <button
                       className="mt-2 rounded-full bg-[#353793] px-4 py-2.5 font-semibold text-white"
                       onClick={() => {

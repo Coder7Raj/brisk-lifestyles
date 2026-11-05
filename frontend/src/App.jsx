@@ -1,8 +1,9 @@
 ﻿import { ArrowRight, Check, Minus, Plus, ShoppingBag, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import Header from "./components/Header.jsx";
+import AdminDashboard from "./components/AdminDashboard.jsx";
 import Login from "./components/auth/Login.jsx";
 import Register from "./components/auth/Register.jsx";
+import Header from "./components/Header.jsx";
 import ProductArt from "./components/ProductArt.jsx";
 import ProductSection from "./components/ProductSection.jsx";
 import { CheckoutPage, ProductDetails } from "./components/StorePages.jsx";
@@ -38,6 +39,7 @@ function RoutePage({
 
   if (route.type === "login")
     return <Login user={user} onAuthenticated={onAuthenticated} />;
+  if (route.type === "admin") return <AdminDashboard user={user} />;
   if (route.type === "register")
     return <Register user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "product") {
@@ -87,7 +89,9 @@ function RoutePage({
   const isEmptyWishlist = route.type === "wishlist" && !items.length;
   const subtitle =
     route.type === "wishlist"
-      ? `${items.length} saved ${items.length === 1 ? "item" : "items"}`
+      ? user
+        ? `${items.length} saved ${items.length === 1 ? "item" : "items"}`
+        : "Sign in to view your saved items."
       : route.type === "search"
         ? `${items.length} ${items.length === 1 ? "result" : "results"} for “${route.query}”`
         : route.type === "offers"
@@ -138,7 +142,9 @@ function RoutePage({
       ) : (
         <p className="py-12 text-center text-sm text-[#77788d]">
           {isEmptyWishlist
-            ? "Your wishlist is empty."
+            ? user
+              ? "Your wishlist is empty."
+              : "Sign in to see your wishlist and keep your favorites private."
             : route.type === "search"
               ? `No products found for “${route.query}”. Try another search.`
               : "There are no products in this category yet."}
@@ -151,13 +157,21 @@ function RoutePage({
 function App() {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
-  const [wishlist, setWishlist] = useState(() => {
+  const [wishlist, setWishlist] = useState([]);
+  const readWishlist = (userId) => {
     try {
-      return JSON.parse(localStorage.getItem("brisk-wishlist") || "[]");
+      const saved = JSON.parse(
+        localStorage.getItem(`brisk-wishlist:${userId}`) || "[]",
+      );
+      return Array.isArray(saved) ? saved : [];
     } catch {
       return [];
     }
-  });
+  };
+  const handleAuthenticated = (nextUser) => {
+    setWishlist(readWishlist(nextUser.id));
+    setUser(nextUser);
+  };
   const { pathname } = useRouter();
   const [cartOpen, setCartOpen] = useState(false);
   const [toast, setToast] = useState("");
@@ -167,12 +181,20 @@ function App() {
   const routeProducts = getRouteProducts(route, products, wishlist);
   useEffect(() => {
     apiRequest("/auth/me")
-      .then((result) => setUser(result.user))
-      .catch(() => setUser(null));
+      .then((result) => handleAuthenticated(result.user))
+      .catch(() => {
+        setUser(null);
+        setWishlist([]);
+      });
   }, []);
   useEffect(() => {
-    localStorage.setItem("brisk-wishlist", JSON.stringify(wishlist));
-  }, [wishlist]);
+    if (user) {
+      localStorage.setItem(
+        `brisk-wishlist:${user.id}`,
+        JSON.stringify(wishlist),
+      );
+    }
+  }, [wishlist, user]);
   useEffect(() => {
     document.title =
       route.type === "home"
@@ -189,9 +211,13 @@ function App() {
     document
       .querySelector('meta[name="description"]')
       ?.setAttribute("content", description);
-    const privateRoute = ["wishlist", "login", "register", "search"].includes(
-      route.type,
-    );
+    const privateRoute = [
+      "wishlist",
+      "login",
+      "register",
+      "search",
+      "admin",
+    ].includes(route.type);
     document
       .querySelector('meta[name="robots"]')
       ?.setAttribute(
@@ -283,12 +309,19 @@ function App() {
         return quantity > 0 ? [{ ...item, quantity }] : [];
       }),
     );
-  const toggleWishlist = (product) =>
+  const toggleWishlist = (product) => {
+    if (!user) {
+      setToast("Sign in to save products to your wishlist.");
+      navigateTo("/login");
+      window.setTimeout(() => setToast(""), 2400);
+      return;
+    }
     setWishlist((current) =>
       current.some((item) => item.id === product.id)
         ? current.filter((item) => item.id !== product.id)
         : [...current, product],
     );
+  };
   const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const total = cart.reduce(
     (sum, item) => sum + item.price * (item.quantity || 1),
@@ -318,6 +351,7 @@ function App() {
           try {
             await apiRequest("/auth/logout", { method: "POST" });
             setUser(null);
+            setWishlist([]);
             setToast("You have signed out.");
           } catch (error) {
             setToast(error.message);
@@ -339,7 +373,7 @@ function App() {
             onAdd={addToCart}
             onWishlistToggle={toggleWishlist}
             user={user}
-            onAuthenticated={setUser}
+            onAuthenticated={handleAuthenticated}
             cart={cart}
             onPlaceOrder={placeOrder}
           />
