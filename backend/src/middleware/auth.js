@@ -1,6 +1,6 @@
-import { getSessionUser } from "../modules/auth/auth.service.js";
+import { getActiveUser, verifyAccessToken } from "../modules/auth/auth.service.js";
 
-const COOKIE_NAME = "brisk_session";
+const COOKIE_NAME = "brisk_access";
 
 export function sessionToken(request) {
   const cookie = request.headers.cookie?.split(";").map((value) => value.trim())
@@ -12,10 +12,10 @@ export async function requireAuth(request, response, next) {
   const token = sessionToken(request);
   if (!token) return response.status(401).json({ error: "Sign in to continue." });
   try {
-    const user = await getSessionUser(token);
+    const claims = verifyAccessToken(token);
+    const user = claims ? await getActiveUser(claims.sub) : null;
     if (!user) return response.status(401).json({ error: "Your session has expired. Sign in again." });
     request.user = user;
-    request.sessionToken = token;
     return next();
   } catch (error) {
     return next(error);

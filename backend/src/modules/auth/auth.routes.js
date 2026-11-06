@@ -18,5 +18,6 @@ const asyncRoute = (handler) => (request, response, next) =>
 authRouter.post("/register", requireSameOrigin, authLimit, asyncRoute(controller.register));
 authRouter.post("/login", requireSameOrigin, authLimit, asyncRoute(controller.login));
 authRouter.post("/logout", requireSameOrigin, asyncRoute(controller.logout));
+authRouter.post("/refresh", requireSameOrigin, asyncRoute(controller.refresh));
 authRouter.get("/me", requireAuth, asyncRoute(controller.me));
 authRouter.get("/users", requireAuth, requireRole("admin"), asyncRoute(controller.users));

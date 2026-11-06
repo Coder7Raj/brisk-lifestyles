@@ -15,7 +15,7 @@ import {
   routeForLabel,
   useRouter,
 } from "./routes/router.jsx";
-import { apiRequest } from "./services/api.js";
+import { apiRequest, setAuthExpiredHandler } from "./services/api.js";
 
 function RoutePage({
   route,
@@ -180,12 +180,17 @@ function App() {
   const route = resolveRoute(pathname.split("?")[0]);
   const routeProducts = getRouteProducts(route, products, wishlist);
   useEffect(() => {
+    setAuthExpiredHandler(() => {
+      setUser(null);
+      setWishlist([]);
+    });
     apiRequest("/auth/me")
       .then((result) => handleAuthenticated(result.user))
       .catch(() => {
         setUser(null);
         setWishlist([]);
       });
+    return () => setAuthExpiredHandler(() => {});
   }, []);
   useEffect(() => {
     if (user) {

@@ -37,6 +37,14 @@ export async function findSessionUser(tokenHash) {
   return result.rows[0] || null;
 }
 
+export async function findActiveUserById(userId) {
+  const result = await pool.query(
+    "SELECT id, display_name, email, avatar_url, role FROM identity.users WHERE id = $1 AND is_active = true",
+    [userId],
+  );
+  return result.rows[0] || null;
+}
+
 export async function revokeSession(tokenHash) {
   await pool.query(
     "UPDATE identity.sessions SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL",
