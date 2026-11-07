@@ -53,7 +53,7 @@ function payloadFrom(form) {
     price_paisa: price,
     compare_at_price_paisa: compare,
     image_url: form.imageUrl.trim() || null,
-    sizes: form.sizes
+    sizes: /fragrance|perfume|attar|scent/i.test(form.category) ? [] : form.sizes
       .toUpperCase()
       .split(",")
       .map((size) => size.trim())
@@ -74,6 +74,9 @@ export default function AdminDashboard({ user }) {
   const [editor, setEditor] = useState(null);
   const [form, setForm] = useState(emptyProduct);
   const [saving, setSaving] = useState(false);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryDescription, setCategoryDescription] = useState("");
+  const [categorySaving, setCategorySaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -140,6 +143,29 @@ export default function AdminDashboard({ user }) {
         </a>
       </section>
     );
+
+  const addCategory = async (event) => {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    setCategorySaving(true);
+    try {
+      const name = categoryName.trim();
+      const category = await apiRequest("/categories", {
+        method: "POST",
+        body: JSON.stringify({ name, slug: slugify(name), description: categoryDescription.trim() }),
+      });
+      setCategories((current) => [...current, category].sort((a, b) => a.name.localeCompare(b.name)));
+      setCategoryName("");
+      setCategoryDescription("");
+      setForm((current) => ({ ...current, category: category.slug, sizes: /fragrance|perfume|attar|scent/i.test(category.slug) ? "" : current.sizes }));
+      setNotice(`${category.name} category added.`);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setCategorySaving(false);
+    }
+  };
 
   const startCreate = () => {
     setEditor("create");
@@ -233,6 +259,11 @@ export default function AdminDashboard({ user }) {
             {error || notice}
           </p>
         )}
+        <form onSubmit={addCategory} className="mb-6 grid gap-3 rounded-2xl border border-[#e8e7ed] bg-white p-4 sm:grid-cols-[1fr_1fr_auto]">
+          <input required maxLength="120" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder="New category name" aria-label="New category name" className="h-11 rounded-xl border border-[#e4e3e9] px-4 text-sm" />
+          <input maxLength="500" value={categoryDescription} onChange={(event) => setCategoryDescription(event.target.value)} placeholder="Description (optional)" aria-label="Category description" className="h-11 rounded-xl border border-[#e4e3e9] px-4 text-sm" />
+          <button disabled={categorySaving} className="rounded-full bg-[#353793] px-5 py-3 text-sm font-bold text-white disabled:opacity-60">{categorySaving ? "Adding..." : "Add category"}</button>
+        </form>
         <div className="mb-6 grid gap-3 rounded-2xl border border-[#e8e7ed] bg-white p-4 sm:grid-cols-[1fr_220px]">
           <input
             value={query}
@@ -436,7 +467,7 @@ export default function AdminDashboard({ user }) {
                     required
                     value={form.category}
                     onChange={(event) =>
-                      setForm({ ...form, category: event.target.value })
+                      setForm({ ...form, category: event.target.value, sizes: /fragrance|perfume|attar|scent/i.test(event.target.value) ? "" : form.sizes })
                     }
                     className="h-11 rounded-xl border border-[#e4e3e9] bg-white px-3 text-sm font-normal text-[#191943]"
                   >
@@ -447,7 +478,7 @@ export default function AdminDashboard({ user }) {
                     ))}
                   </select>
                 </label>
-                <label className="grid gap-1.5 text-xs font-semibold text-[#55566e]">
+                {!/fragrance|perfume|attar|scent/i.test(form.category) && <label className="grid gap-1.5 text-xs font-semibold text-[#55566e]">
                   <div className="flex">
                     Sizes{" "}
                     <span className="text-[11px] font-normal text-[#85869b]">
@@ -462,7 +493,7 @@ export default function AdminDashboard({ user }) {
                     placeholder="S, M, L, XL"
                     className="h-11 rounded-xl border border-[#e4e3e9] px-3 text-sm font-normal text-[#191943]"
                   />
-                </label>
+                </label>}
                 <label className="grid gap-1.5 text-xs font-semibold text-[#55566e] sm:col-span-2">
                   Description
                   <textarea

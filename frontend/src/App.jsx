@@ -1,4 +1,12 @@
-﻿import { ArrowRight, Check, Minus, Plus, ShoppingBag, X } from "lucide-react";
+﻿import {
+  ArrowRight,
+  Check,
+  Home,
+  Minus,
+  Plus,
+  ShoppingBag,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import Login from "./components/auth/Login.jsx";
@@ -49,10 +57,24 @@ function RoutePage({
         : 0,
   );
 
-  if (loading && ["product", "category", "search", "offers"].includes(route.type))
-    return <p className="mx-auto min-h-[55vh] max-w-[1250px] px-5 py-16 text-center text-[#77788d]">Loading products…</p>;
+  if (
+    loading &&
+    ["product", "category", "search", "offers"].includes(route.type)
+  )
+    return (
+      <p className="mx-auto min-h-[55vh] max-w-[1250px] px-5 py-16 text-center text-[#77788d]">
+        Loading products…
+      </p>
+    );
   if (error && ["product", "category", "search", "offers"].includes(route.type))
-    return <p className="mx-auto min-h-[55vh] max-w-[1250px] px-5 py-16 text-center text-red-700" role="alert">{error}</p>;
+    return (
+      <p
+        className="mx-auto min-h-[55vh] max-w-[1250px] px-5 py-16 text-center text-red-700"
+        role="alert"
+      >
+        {error}
+      </p>
+    );
 
   if (route.type === "login")
     return <Login user={user} onAuthenticated={onAuthenticated} />;
@@ -171,8 +193,46 @@ function RoutePage({
   );
 }
 
+function AdminBar({ user, onLogout }) {
+  return (
+    <header className="flex h-16 items-center justify-between border-b border-[#e9e6df] bg-white px-5 sm:px-10">
+      <a
+        href="/"
+        aria-label="Home"
+        className="inline-flex items-center gap-2 rounded-full border border-[#e4e2df] px-4 py-2 text-sm font-semibold text-[#353793]"
+      >
+        <Home size={17} /> Home
+      </a>
+      <button
+        onClick={onLogout}
+        aria-label="Sign out"
+        title="Sign out"
+        className="grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-[#e4e2df] bg-white text-[#353793]"
+      >
+        {/* {user?.avatarUrl ? <img src={user.avatarUrl} alt="Sign out" className="h-full w-full object-cover" /> : <UserRound size={20} />} */}
+        {user?.avatarUrl ? (
+          <img
+            src={user.avatarUrl}
+            alt="Sign out"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <button className="flex items-center justify-center px-4 py-2 rounded-full">
+            Sign Out
+          </button>
+        )}
+      </button>
+    </header>
+  );
+}
+
 function App() {
-  const { products, categories, loading: productsLoading, error: productsError } = useProducts();
+  const {
+    products,
+    categories,
+    loading: productsLoading,
+    error: productsError,
+  } = useProducts();
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [wishlist, setWishlist] = useState([]);
@@ -365,28 +425,45 @@ function App() {
 
   return (
     <div id="top">
-      <Header
-        cartCount={cartCount}
-        wishlistCount={wishlist.length}
-        user={user}
-        onCart={() => setCartOpen(true)}
-        onLogout={async () => {
-          try {
-            await apiRequest("/auth/logout", { method: "POST" });
-            setUser(null);
-            setWishlist([]);
-            setToast("You have signed out.");
-          } catch (error) {
-            setToast(error.message);
-          }
-          window.setTimeout(() => setToast(""), 2400);
-        }}
-        onSearch={(query) => {
-          const normalized = query.trim();
-          if (normalized)
-            navigateTo(`/search?q=${encodeURIComponent(normalized)}`);
-        }}
-      />
+      {route.type === "admin" ? (
+        <AdminBar
+          user={user}
+          onLogout={async () => {
+            try {
+              await apiRequest("/auth/logout", { method: "POST" });
+              setUser(null);
+              setWishlist([]);
+              setToast("You have signed out.");
+            } catch (error) {
+              setToast(error.message);
+            }
+            window.setTimeout(() => setToast(""), 2400);
+          }}
+        />
+      ) : (
+        <Header
+          cartCount={cartCount}
+          wishlistCount={wishlist.length}
+          user={user}
+          onCart={() => setCartOpen(true)}
+          onLogout={async () => {
+            try {
+              await apiRequest("/auth/logout", { method: "POST" });
+              setUser(null);
+              setWishlist([]);
+              setToast("You have signed out.");
+            } catch (error) {
+              setToast(error.message);
+            }
+            window.setTimeout(() => setToast(""), 2400);
+          }}
+          onSearch={(query) => {
+            const normalized = query.trim();
+            if (normalized)
+              navigateTo(`/search?q=${encodeURIComponent(normalized)}`);
+          }}
+        />
+      )}
       <main>
         {route.type !== "home" ? (
           <RoutePage
@@ -405,10 +482,20 @@ function App() {
         ) : (
           <>
             {productsLoading && (
-              <p className="mx-auto max-w-[1250px] px-5 py-4 text-center text-sm text-[#77788d]" role="status">Loading products…</p>
+              <p
+                className="mx-auto max-w-[1250px] px-5 py-4 text-center text-sm text-[#77788d]"
+                role="status"
+              >
+                Loading products…
+              </p>
             )}
             {productsError && (
-              <p className="mx-auto max-w-[1250px] px-5 py-4 text-center text-sm text-red-700" role="alert">{productsError}</p>
+              <p
+                className="mx-auto max-w-[1250px] px-5 py-4 text-center text-sm text-red-700"
+                role="alert"
+              >
+                {productsError}
+              </p>
             )}
             <section
               className={`relative isolate flex min-h-[430px] items-center overflow-hidden bg-[#20216b] text-white transition-colors duration-700 ${
@@ -758,13 +845,17 @@ function App() {
               "punjabi",
               "Punjabi edit",
               "From daily wear to festive jacquard.",
-              products.filter((product) => product.category === "punjabi").slice(0, 4),
+              products
+                .filter((product) => product.category === "punjabi")
+                .slice(0, 4),
             )}
             {section(
               "scents",
               "Signature scents",
               "Woody, floral and fresh fragrances.",
-              products.filter((product) => product.kind === "scent").slice(0, 4),
+              products
+                .filter((product) => product.kind === "scent")
+                .slice(0, 4),
             )}
             {section(
               "arrivals",
@@ -776,7 +867,9 @@ function App() {
               "specials",
               "Special offers",
               "Only products priced below their previous price.",
-              products.filter((product) => product.originalPrice > product.price).slice(0, 4),
+              products
+                .filter((product) => product.originalPrice > product.price)
+                .slice(0, 4),
             )}
             <section
               className="mt-[54px] bg-[#eeeff9] px-[max(calc((100%-1250px)/2),7.4%)] py-[42px] pb-[50px] max-[1100px]:px-[5%] max-[720px]:mt-10 max-[720px]:py-8"
@@ -854,15 +947,17 @@ function App() {
           </>
         )}
       </main>
-      <button
-        className={`fixed bottom-[26px] right-[26px] z-[14] grid h-[50px] w-[50px] place-items-center rounded-full bg-[#37399a] text-[25px] text-white shadow-lg transition duration-300 max-[720px]:bottom-[18px] max-[720px]:right-4 max-[720px]:h-11 max-[720px]:w-11 ${showTop ? "visible translate-y-0 opacity-100" : "invisible translate-y-3 opacity-0"}`}
-        aria-label="Back to top"
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      >
-        ↑
-      </button>
-      <Footer />
-      {toast && (
+      {route.type !== "admin" && (
+        <button
+          className={`fixed bottom-[26px] right-[26px] z-[14] grid h-[50px] w-[50px] place-items-center rounded-full bg-[#37399a] text-[25px] text-white shadow-lg transition duration-300 max-[720px]:bottom-[18px] max-[720px]:right-4 max-[720px]:h-11 max-[720px]:w-11 ${showTop ? "visible translate-y-0 opacity-100" : "invisible translate-y-3 opacity-0"}`}
+          aria-label="Back to top"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          ↑
+        </button>
+      )}
+      {route.type !== "admin" && <Footer />}
+      {toast && route.type !== "admin" && (
         <div
           className="fixed bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#17173f] px-[17px] py-3 text-xs text-white shadow-xl"
           role="status"
@@ -871,7 +966,7 @@ function App() {
           {toast}
         </div>
       )}
-      {cartOpen && (
+      {cartOpen && route.type !== "admin" && (
         <div
           className="fixed inset-0 z-[40] flex justify-end bg-[#0e0f2b]/50"
           onClick={(event) => {
