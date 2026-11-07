@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../services/api.js";
+import { useProducts } from "../services/products.jsx";
 
 const emptyProduct = {
   slug: "",
@@ -53,6 +54,7 @@ function payloadFrom(form) {
     compare_at_price_paisa: compare,
     image_url: form.imageUrl.trim() || null,
     sizes: form.sizes
+      .toUpperCase()
       .split(",")
       .map((size) => size.trim())
       .filter(Boolean),
@@ -61,6 +63,7 @@ function payloadFrom(form) {
 }
 
 export default function AdminDashboard({ user }) {
+  const { refreshProducts } = useProducts();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -170,6 +173,7 @@ export default function AdminDashboard({ user }) {
           ? [saved, ...current]
           : current.map((item) => (item.id === saved.id ? saved : item)),
       );
+      await refreshProducts();
       setEditor(null);
       setNotice(editor === "create" ? "Product created." : "Product updated.");
     } catch (requestError) {
@@ -192,6 +196,7 @@ export default function AdminDashboard({ user }) {
       setProducts((current) =>
         current.filter((product) => product.id !== item.id),
       );
+      await refreshProducts();
       setNotice(`${item.name} deleted.`);
     } catch (requestError) {
       setError(requestError.message);
@@ -443,10 +448,12 @@ export default function AdminDashboard({ user }) {
                   </select>
                 </label>
                 <label className="grid gap-1.5 text-xs font-semibold text-[#55566e]">
-                  Sizes{" "}
-                  <span className="text-[11px] font-normal text-[#85869b]">
-                    Separate sizes with commas
-                  </span>
+                  <div className="flex">
+                    Sizes{" "}
+                    <span className="text-[11px] font-normal text-[#85869b]">
+                      ( Separate sizes with commas )
+                    </span>
+                  </div>
                   <input
                     value={form.sizes}
                     onChange={(event) =>

@@ -1,20 +1,29 @@
-import { getActiveUser, verifyAccessToken } from "../modules/auth/auth.service.js";
+import {
+  getActiveUser,
+  verifyAccessToken,
+} from "../modules/auth/auth.service.js";
 
-const COOKIE_NAME = "brisk_access";
+const COOKIE_NAME = process.env.ACCESS_COOKIE;
 
 export function sessionToken(request) {
-  const cookie = request.headers.cookie?.split(";").map((value) => value.trim())
+  const cookie = request.headers.cookie
+    ?.split(";")
+    .map((value) => value.trim())
     .find((value) => value.startsWith(`${COOKIE_NAME}=`));
   return cookie ? cookie.slice(COOKIE_NAME.length + 1) : null;
 }
 
 export async function requireAuth(request, response, next) {
   const token = sessionToken(request);
-  if (!token) return response.status(401).json({ error: "Sign in to continue." });
+  if (!token)
+    return response.status(401).json({ error: "Sign in to continue." });
   try {
     const claims = verifyAccessToken(token);
     const user = claims ? await getActiveUser(claims.sub) : null;
-    if (!user) return response.status(401).json({ error: "Your session has expired. Sign in again." });
+    if (!user)
+      return response
+        .status(401)
+        .json({ error: "Your session has expired. Sign in again." });
     request.user = user;
     return next();
   } catch (error) {
@@ -24,8 +33,12 @@ export async function requireAuth(request, response, next) {
 
 export function requireRole(...roles) {
   return (request, response, next) => {
-    if (!request.user) return response.status(401).json({ error: "Sign in to continue." });
-    if (!roles.includes(request.user.role)) return response.status(403).json({ error: "You do not have permission to access this resource." });
+    if (!request.user)
+      return response.status(401).json({ error: "Sign in to continue." });
+    if (!roles.includes(request.user.role))
+      return response
+        .status(403)
+        .json({ error: "You do not have permission to access this resource." });
     return next();
   };
 }

@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import Login from "./components/auth/Login.jsx";
 import Register from "./components/auth/Register.jsx";
+import Footer from "./components/Footer.jsx";
 import Header from "./components/Header.jsx";
 import ProductArt from "./components/ProductArt.jsx";
 import ProductSection from "./components/ProductSection.jsx";
 import { CheckoutPage, ProductDetails } from "./components/StorePages.jsx";
-import { categories, products } from "./data/catalog.js";
 import {
   getRouteProducts,
   navigateTo,
@@ -16,6 +16,16 @@ import {
   useRouter,
 } from "./routes/router.jsx";
 import { apiRequest, setAuthExpiredHandler } from "./services/api.js";
+import { useProducts } from "./services/products.jsx";
+
+const categoryColorClasses = {
+  navy: "bg-gradient-to-br from-[#272852] to-[#121434]",
+  blue: "bg-gradient-to-br from-[#676bc0] to-[#323481]",
+  gold: "bg-gradient-to-br from-[#e2c048] to-[#b68e19]",
+  olive: "bg-gradient-to-br from-[#a38c31] to-[#6b5811]",
+  lavender: "bg-gradient-to-br from-[#9697e6] to-[#6668c9]",
+};
+const categoryColors = ["navy", "blue", "gold", "olive", "lavender"];
 
 function RoutePage({
   route,
@@ -27,6 +37,8 @@ function RoutePage({
   onAuthenticated,
   cart,
   onPlaceOrder,
+  loading,
+  error,
 }) {
   const [sortOrder, setSortOrder] = useState("featured");
   const sortedProducts = [...items].sort((a, b) =>
@@ -37,13 +49,18 @@ function RoutePage({
         : 0,
   );
 
+  if (loading && ["product", "category", "search", "offers"].includes(route.type))
+    return <p className="mx-auto min-h-[55vh] max-w-[1250px] px-5 py-16 text-center text-[#77788d]">Loading products…</p>;
+  if (error && ["product", "category", "search", "offers"].includes(route.type))
+    return <p className="mx-auto min-h-[55vh] max-w-[1250px] px-5 py-16 text-center text-red-700" role="alert">{error}</p>;
+
   if (route.type === "login")
     return <Login user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "admin") return <AdminDashboard user={user} />;
   if (route.type === "register")
     return <Register user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "product") {
-    const product = products.find((item) => item.id === route.productId);
+    const product = products.find((item) => item.slug === route.productId);
     return (
       <ProductDetails
         product={product}
@@ -155,6 +172,7 @@ function RoutePage({
 }
 
 function App() {
+  const { products, categories, loading: productsLoading, error: productsError } = useProducts();
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [wishlist, setWishlist] = useState([]);
@@ -381,117 +399,17 @@ function App() {
             onAuthenticated={handleAuthenticated}
             cart={cart}
             onPlaceOrder={placeOrder}
+            loading={productsLoading}
+            error={productsError}
           />
         ) : (
           <>
-            {/* <section
-              className={`relative flex h-[430px] items-center overflow-hidden bg-[#20216b] px-[max(calc((100%-1250px)/2), 2%)] text-white transition-colors duration-700 max-[1100px]:h-[420px] max-[1100px]:px-[2%] max-[720px]:h-auto max-[720px]:min-h-[680px] max-[720px]:items-stretch max-[720px]:px-[2%] max-[720px]:pb-[20px] max-[720px]:pt-8 max-[390px]:min-h-[690px] ${heroSlide === 1 ? "bg-[#31347e]" : heroSlide === 2 ? "bg-[#282858]" : ""}`}
-            >
-              <div
-                className="relative z-[2] w-[59%] animate-hero-in motion-reduce:animate-none max-[1100px]:w-[50%] max-[720px]:w-full"
-                key={heroSlide}
-              >
-                <span className="inline-block rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-[#d8ba53]">
-                  {
-                    [
-                      "Made for your moments",
-                      "A little more color",
-                      "Style for every story",
-                    ][heroSlide]
-                  }
-                </span>
-                <h1 className="my-5 text-[clamp(40px,5.2vw,69px)] font-extrabold leading-[1.04] tracking-[-.055em] max-[1100px]:text-[clamp(38px,4.8vw,56px)] max-[720px]:my-4 max-[720px]:text-[clamp(32px,8vw,46px)]">
-                  {
-                    [
-                      <>
-                        Kurti, sets and
-                        <br />
-                        <em className="not-italic text-[#f0c332]">
-                          everyday favorites.
-                        </em>
-                      </>,
-                      <>
-                        Find your
-                        <br />
-                        <em className="not-italic text-[#f0c332]">
-                          festive feeling.
-                        </em>
-                      </>,
-                      <>
-                        A scent that
-                        <br />
-                        <em className="not-italic text-[#f0c332]">
-                          stays with you.
-                        </em>
-                      </>,
-                    ][heroSlide]
-                  }
-                </h1>
-                <p className="mb-6 mt-0 max-w-[390px] text-sm text-[#dfdff4] max-[720px]:mb-5 max-[720px]:max-w-[310px] max-[720px]:text-xs">
-                  {
-                    [
-                      "Printed, embroidered and three-piece styles in comfortable cotton.",
-                      "Thoughtful details and vibrant looks for the moments that matter.",
-                      "Discover woody, floral and fresh fragrances for every day.",
-                    ][heroSlide]
-                  }
-                </p>
-                <div className="flex flex-wrap gap-2.5">
-                  <a
-                    className="inline-flex items-center justify-center gap-[7px] rounded-full bg-[#f0c332] px-5 py-3 text-xs font-bold text-[#22224c] transition hover:bg-[#ffda55] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#f0c332]"
-                    href={routeForLabel(
-                      heroSlide === 2 ? "Perfumes" : "Punjabi",
-                    )}
-                  >
-                    Shop collection
-                  </a>
-                  <a
-                    className="inline-flex items-center justify-center gap-[7px] rounded-full border border-white/60 px-5 py-3 text-xs font-bold text-white transition hover:bg-white hover:text-[#20216b]"
-                    href={routeForLabel("All categories")}
-                  >
-                    Explore categories
-                  </a>
-                </div>
-              </div>
-
-              <div
-                className="absolute right-[7%] top-[54px] h-[330px] w-[48%] max-[1100px]:right-[4%] max-[1100px]:top-[60px] max-[1100px]:h-[300px] max-[1100px]:w-[42%] max-[720px]:bottom-[54px] max-[720px]:left-[8%] max-[720px]:right-[8%] max-[720px]:top-auto max-[720px]:h-[205px] max-[720px]:w-[90%] max-[720px]:opacity-100 max-[390px]:bottom-[58px] max-[390px]:h-[190px]"
-                aria-hidden="true"
-              >
-                <div className="group absolute left-[6%] top-[60px] h-[255px] w-[31%] overflow-hidden rounded-[22px] border-2 border-[#cdb23c] p-[5px] max-[720px]:top-5 max-[720px]:h-[140px] max-[720px]:rounded-[13px]">
-                  <ProductArt
-                    kind={heroSlide === 2 ? "scent" : "shirt"}
-                    color={heroSlide === 1 ? "gold" : "blue"}
-                    name="Brisk collection"
-                  />
-                </div>
-                <div className="group absolute left-[37%] top-[85px] h-[255px] w-[31%] overflow-hidden rounded-[22px] border-2 border-[#cdb23c] p-[5px] max-[720px]:top-9 max-[720px]:h-[140px] max-[720px]:rounded-[13px]">
-                  <ProductArt kind="shirt" color="blue" name="Indigo style" />
-                </div>
-                <div className="group absolute left-[68%] top-[38px] h-[255px] w-[31%] overflow-hidden rounded-[22px] border-2 border-[#cdb23c] p-[5px] max-[720px]:top-2 max-[720px]:h-[140px] max-[720px]:rounded-[13px]">
-                  <ProductArt
-                    kind={heroSlide === 2 ? "scent" : "shirt"}
-                    color="gold"
-                    name="Golden style"
-                  />
-                </div>
-                <span className="absolute -right-[150px] -bottom-[125px] h-[270px] w-[270px] rounded-full border-[24px] border-[#f1ce4655]" />
-              </div>
-
-              <div
-                className="absolute bottom-[13px] left-1/2 flex -translate-x-1/2 items-center gap-[7px] max-[720px]:bottom-[19px]"
-                aria-label={`Slide ${heroSlide + 1} of 3`}
-              >
-                {[0, 1, 2].map((slide) => (
-                  <button
-                    key={slide}
-                    className={`h-[9px] rounded-full border-0 bg-white/40 p-0 transition-all ${slide === heroSlide ? "!w-[26px] bg-[#f0c332]" : "w-[9px]"}`}
-                    aria-label={`Go to slide ${slide + 1}`}
-                    onClick={() => setHeroSlide(slide)}
-                  />
-                ))}
-              </div>
-            </section> */}
+            {productsLoading && (
+              <p className="mx-auto max-w-[1250px] px-5 py-4 text-center text-sm text-[#77788d]" role="status">Loading products…</p>
+            )}
+            {productsError && (
+              <p className="mx-auto max-w-[1250px] px-5 py-4 text-center text-sm text-red-700" role="alert">{productsError}</p>
+            )}
             <section
               className={`relative isolate flex min-h-[430px] items-center overflow-hidden bg-[#20216b] text-white transition-colors duration-700 ${
                 heroSlide === 1
@@ -765,18 +683,18 @@ function App() {
                 </div>
               </div>
               <div className="grid grid-cols-5 gap-3 max-[720px]:grid-cols-3 max-[720px]:gap-[9px] max-[390px]:grid-cols-2">
-                {categories.map((category) => (
+                {categories.map((category, index) => (
                   <a
-                    href={routeForLabel(category.name)}
-                    className={`category-tile group relative isolate flex h-[155px] flex-col justify-end overflow-hidden rounded-2xl p-4 text-white transition duration-300 hover:-translate-y-1 hover:shadow-lg max-[1100px]:h-[140px] max-[720px]:h-[125px] max-[720px]:p-3 ${{ navy: "bg-gradient-to-br from-[#272852] to-[#121434]", blue: "bg-gradient-to-br from-[#676bc0] to-[#323481]", gold: "bg-gradient-to-br from-[#e2c048] to-[#b68e19]", olive: "bg-gradient-to-br from-[#a38c31] to-[#6b5811]", lavender: "bg-gradient-to-br from-[#9697e6] to-[#6668c9]" }[category.color]}`}
-                    key={category.name}
+                    href={`/category/${category.slug}`}
+                    className={`category-tile group relative isolate flex h-[155px] flex-col justify-end overflow-hidden rounded-2xl p-4 text-white transition duration-300 hover:-translate-y-1 hover:shadow-lg max-[1100px]:h-[140px] max-[720px]:h-[125px] max-[720px]:p-3 ${categoryColorClasses[categoryColors[index % categoryColors.length]]}`}
+                    key={category.id}
                   >
                     <span className="absolute -right-[22px] -top-[34px] -z-10 h-[95px] w-[95px] rounded-full border-4 border-white/20 transition-transform group-hover:scale-125" />
                     <b className="text-[15px] leading-tight max-[720px]:text-[13px]">
                       {category.name}
                     </b>
                     <small className="mt-1 text-[10px] text-white/80 max-[720px]:text-[9px]">
-                      {category.detail}
+                      {category.description}
                     </small>
                     <span className="mt-2 flex items-center gap-1 text-[10px] text-[#f0c332] max-[720px]:text-[9px]">
                       Shop now <ArrowRight size={13} />
@@ -787,11 +705,9 @@ function App() {
             </section>
             {section(
               "bestsellers",
-              "Best sellers",
-              "Ranked by popularity in the catalog.",
-              products
-                .filter((product) => product.badge === "Best seller")
-                .slice(0, 4),
+              "Featured products",
+              "Explore products from our current collection.",
+              products.slice(0, 4),
             )}
             <section
               className="mx-auto mt-[44px] grid max-w-[1250px] grid-cols-2 gap-[18px] max-[1100px]:mx-[5%] max-[720px]:mt-[34px] max-[720px]:grid-cols-1 max-[720px]:gap-3"
@@ -842,25 +758,25 @@ function App() {
               "punjabi",
               "Punjabi edit",
               "From daily wear to festive jacquard.",
-              products.slice(4, 8),
+              products.filter((product) => product.category === "punjabi").slice(0, 4),
             )}
             {section(
               "scents",
               "Signature scents",
               "Woody, floral and fresh fragrances.",
-              products.slice(8, 12),
+              products.filter((product) => product.kind === "scent").slice(0, 4),
             )}
             {section(
               "arrivals",
               "New arrivals",
               "Fresh picks, just added to the collection.",
-              products.slice(12, 16),
+              products.slice(0, 4),
             )}
             {section(
               "specials",
               "Special offers",
               "Only products priced below their previous price.",
-              products.slice(1, 5),
+              products.filter((product) => product.originalPrice > product.price).slice(0, 4),
             )}
             <section
               className="mt-[54px] bg-[#eeeff9] px-[max(calc((100%-1250px)/2),7.4%)] py-[42px] pb-[50px] max-[1100px]:px-[5%] max-[720px]:mt-10 max-[720px]:py-8"
@@ -945,29 +861,7 @@ function App() {
       >
         ↑
       </button>
-      <footer className="bg-[#17173f] px-[max(calc((100%-1250px)/2),7.4%)] pb-[25px] pt-9 text-white max-[1100px]:px-[5%] max-[720px]:pt-7">
-        <a
-          className="inline-flex w-max items-baseline gap-[5px] text-[30px] font-extrabold tracking-[-.06em] text-white max-[720px]:text-[22px]"
-          href="#top"
-        >
-          <span>Brisk</span>
-          <i className="text-[18px] font-semibold text-[#e2b52a] max-[720px]:text-[13px]">
-            Lifestyles
-          </i>
-        </a>
-        <p className="my-3 text-xs text-[#c6c6db]">
-          Everyday style, made for your moments.
-        </p>
-        <div className="my-[22px] flex gap-[23px] text-[11px] max-[720px]:flex-wrap max-[720px]:gap-[14px]">
-          <a href={routeForLabel("All categories")}>Shop</a>
-          <a href={routeForLabel("Offers")}>Offers</a>
-          <a href={routeForLabel("Reviews")}>Customer care</a>
-          <a href="#top">Back to top â†‘</a>
-        </div>
-        <small className="text-[10px] text-[#a4a4c3]">
-          Â© 2025 Brisk Lifestyles Â· Prices shown in Bangladeshi taka
-        </small>
-      </footer>
+      <Footer />
       {toast && (
         <div
           className="fixed bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#17173f] px-[17px] py-3 text-xs text-white shadow-xl"

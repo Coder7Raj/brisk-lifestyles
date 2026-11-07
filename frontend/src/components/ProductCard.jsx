@@ -21,7 +21,11 @@ export default function ProductCard({
   return (
     <article className="group min-w-0 overflow-hidden rounded-2xl border border-[#e4e2df] bg-white transition duration-300 hover:-translate-y-[7px] hover:shadow-[0_18px_35px_#19194318]">
       <div className="relative h-[300px] overflow-hidden bg-[#20216b] max-[1100px]:h-[260px] max-[720px]:h-[clamp(180px,58vw,280px)]">
-        <ProductArt {...product} />
+        {product.image_url ? (
+          <img className="h-full w-full object-cover" src={product.image_url} alt={product.name} />
+        ) : (
+          <ProductArt {...product} />
+        )}
         <span className="absolute left-3 top-3 z-10 rounded-xl bg-[#f0c332] px-[9px] py-[5px] text-[9px] font-extrabold text-[#1c1c3f]">
           {product.badge}
         </span>
@@ -34,7 +38,7 @@ export default function ProductCard({
         </button>
         <a
           className="absolute bottom-0 left-0 right-0 z-10 grid h-[35px] place-items-center bg-[#37399aeb] text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100 focus:opacity-100 max-[720px]:opacity-100"
-          href={`/product/${product.id}`}
+          href={`/product/${product.slug}`}
         >
           View details
         </a>
@@ -45,15 +49,19 @@ export default function ProductCard({
         </h3>
         <div className="flex items-center gap-[6px] text-sm font-extrabold text-[#202050] max-[720px]:flex-wrap max-[720px]:gap-1 max-[720px]:text-xs">
           ৳{product.price.toLocaleString("en-BD")}
-          <del className="text-[10px] font-medium text-[#9494a3] max-[720px]:text-[9px]">
-            ৳{product.originalPrice.toLocaleString("en-BD")}
-          </del>
-          <span className="rounded-[9px] bg-[#fff1c8] px-[6px] py-[3px] text-[9px] text-[#8c6910]">
-            {Math.round((1 - product.price / product.originalPrice) * 100)}% off
-          </span>
+          {product.originalPrice > product.price && (
+            <>
+              <del className="text-[10px] font-medium text-[#9494a3] max-[720px]:text-[9px]">
+                ৳{product.originalPrice.toLocaleString("en-BD")}
+              </del>
+              <span className="rounded-[9px] bg-[#fff1c8] px-[6px] py-[3px] text-[9px] text-[#8c6910]">
+                {Math.round((1 - product.price / product.originalPrice) * 100)}% off
+              </span>
+            </>
+          )}
         </div>
         <div className="my-2 text-[10px] text-[#88899a] max-[720px]:my-[6px] max-[720px]:text-[9px]">
-          In stock
+          {product.in_stock ? "In stock" : "Out of stock"}
         </div>
         {product.sizes.length ? (
           <select
@@ -70,6 +78,7 @@ export default function ProductCard({
         ) : (
           <button
             className="h-[39px] w-full rounded-full border-0 bg-[#353793] text-[11px] font-bold text-white max-[720px]:h-[34px] max-[720px]:text-[10px]"
+            disabled={!product.in_stock}
             onClick={add}
           >
             Add to cart
@@ -78,6 +87,7 @@ export default function ProductCard({
         {product.sizes.length > 0 && (
           <button
             className="mt-[7px] h-[39px] w-full rounded-full border-0 bg-[#353793] text-[11px] font-bold text-white max-[720px]:h-[34px] max-[720px]:text-[10px]"
+            disabled={!product.in_stock}
             onClick={add}
           >
             Add to cart

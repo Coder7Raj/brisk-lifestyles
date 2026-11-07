@@ -93,12 +93,12 @@ export function resolveRoute(pathname) {
       query,
     };
   }
-  const productMatch = pathname.match(/^\/product\/(\d+)$/);
+  const productMatch = pathname.match(/^\/product\/([a-z0-9-]+)$/i);
   if (productMatch)
     return {
       type: "product",
       title: "Product details",
-      productId: Number(productMatch[1]),
+      productId: productMatch[1],
     };
 
   const slug = pathname.replace(/^\/+|\/+$/g, "").replace(/^category\//, "");
@@ -129,21 +129,21 @@ export function getRouteProducts(route, products, wishlist) {
   const key = route.slug.toLowerCase();
   if (["categories", "all-categories"].includes(key)) return products;
   if (["men", "punjabi", "pajama"].includes(key)) {
-    return products.filter(
-      (item) =>
-        item.category.toLowerCase() ===
-        (key === "pajama" ? "pajama" : "punjabi"),
+    return products.filter((item) =>
+      key === "men"
+        ? ["punjabi", "pajama"].includes(item.category.toLowerCase())
+        : item.category.toLowerCase() === key,
     );
   }
   if (["women", "kurti", "accessories", "gift-cards"].includes(key)) {
-    const category = key === "gift-cards" ? "gift card" : key;
+    const category =
+      key === "women" ? "kurti" : key === "gift-cards" ? "gift-card" : key;
     return products.filter((item) =>
       item.category.toLowerCase().includes(category),
     );
   }
-  if (key === "perfumes")
+  if (["perfumes", "fragrance"].includes(key))
     return products.filter((item) => item.kind === "scent");
-  if (key === "new-arrivals")
-    return products.filter((item) => item.badge === "New");
+  if (key === "new-arrivals") return products.slice(0, 8);
   return products.filter((item) => item.category.toLowerCase() === key);
 }

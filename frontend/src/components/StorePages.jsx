@@ -19,7 +19,15 @@ export function ProductDetails({ product, saved, onWishlistToggle, onAdd }) {
       </p>
       <div className="detail-layout">
         <div className="detail-art">
-          <ProductArt {...product} />
+          {product.image_url ? (
+            <img
+              className="h-full w-full object-cover"
+              src={product.image_url}
+              alt={product.name}
+            />
+          ) : (
+            <ProductArt {...product} />
+          )}
           <span className="detail-badge">{product.badge}</span>
         </div>
         <ProductInfo
@@ -66,7 +74,7 @@ function ProductInfo({ product, saved, onWishlistToggle, onAdd }) {
         finished and ready for everyday moments or special occasions.
       </p>
       <p className="stock-line">
-        <i /> In stock · Ready to ship
+        <i /> {product.in_stock ? "In stock · Ready to ship" : "Out of stock"}
       </p>
       {hasSizes && (
         <fieldset className="size-picker">
@@ -93,6 +101,7 @@ function ProductInfo({ product, saved, onWishlistToggle, onAdd }) {
       )}
       <button
         className="primary-action"
+        disabled={!product.in_stock}
         onClick={() => {
           if (hasSizes && !size) return;
           onAdd(product, size);
