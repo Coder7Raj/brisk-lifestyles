@@ -20,4 +20,5 @@ authRouter.post("/login", requireSameOrigin, authLimit, asyncRoute(controller.lo
 authRouter.post("/logout", requireSameOrigin, asyncRoute(controller.logout));
 authRouter.post("/refresh", requireSameOrigin, asyncRoute(controller.refresh));
 authRouter.get("/me", requireAuth, asyncRoute(controller.me));
+authRouter.patch("/me", requireAuth, requireSameOrigin, asyncRoute(controller.updateProfile));
 authRouter.get("/users", requireAuth, requireRole("admin"), asyncRoute(controller.users));

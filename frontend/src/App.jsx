@@ -5,9 +5,11 @@
   Minus,
   Plus,
   ShoppingBag,
+  UserRound,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import AccountDashboard from "./components/AccountDashboard.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import Login from "./components/auth/Login.jsx";
 import Register from "./components/auth/Register.jsx";
@@ -43,6 +45,7 @@ function RoutePage({
   onWishlistToggle,
   user,
   onAuthenticated,
+  onProfileUpdated,
   cart,
   onPlaceOrder,
   loading,
@@ -79,6 +82,7 @@ function RoutePage({
   if (route.type === "login")
     return <Login user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "admin") return <AdminDashboard user={user} />;
+  if (route.type === "account") return <AccountDashboard user={user} cart={cart} wishlist={wishlist} onProfileUpdated={onProfileUpdated} />;
   if (route.type === "register")
     return <Register user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "product") {
@@ -209,17 +213,10 @@ function AdminBar({ user, onLogout }) {
         title="Sign out"
         className="grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-[#e4e2df] bg-white text-[#353793]"
       >
-        {/* {user?.avatarUrl ? <img src={user.avatarUrl} alt="Sign out" className="h-full w-full object-cover" /> : <UserRound size={20} />} */}
         {user?.avatarUrl ? (
-          <img
-            src={user.avatarUrl}
-            alt="Sign out"
-            className="h-full w-full object-cover"
-          />
+          <img src={user.avatarUrl} alt="Sign out" className="h-full w-full object-cover" />
         ) : (
-          <button className="flex items-center justify-center px-4 py-2 rounded-full">
-            Sign Out
-          </button>
+          <UserRound size={20} />
         )}
       </button>
     </header>
@@ -246,10 +243,20 @@ function App() {
       return [];
     }
   };
+  const readCart = (userId) => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`brisk-cart:${userId}`) || "[]");
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  };
   const handleAuthenticated = (nextUser) => {
     setWishlist(readWishlist(nextUser.id));
+    setCart(readCart(nextUser.id));
     setUser(nextUser);
   };
+  const handleProfileUpdated = (nextUser) => setUser(nextUser);
   const { pathname } = useRouter();
   const [cartOpen, setCartOpen] = useState(false);
   const [toast, setToast] = useState("");
@@ -279,6 +286,9 @@ function App() {
     }
   }, [wishlist, user]);
   useEffect(() => {
+    if (user) localStorage.setItem(`brisk-cart:${user.id}`, JSON.stringify(cart));
+  }, [cart, user]);
+  useEffect(() => {
     document.title =
       route.type === "home"
         ? "Punjabi, perfume and everyday style | Brisk Lifestyles"
@@ -296,6 +306,7 @@ function App() {
       ?.setAttribute("content", description);
     const privateRoute = [
       "wishlist",
+      "account",
       "login",
       "register",
       "search",
@@ -313,6 +324,11 @@ function App() {
   }, [pathname, route.title, route.type]);
   const reviewTrack = useRef(null);
   const pointerStart = useRef(null);
+  useEffect(() => {
+    const open = () => setCartOpen(true);
+    window.addEventListener("open-cart", open);
+    return () => window.removeEventListener("open-cart", open);
+  }, []);
   useEffect(() => {
     if (route.type !== "home") return undefined;
     const timer = window.setInterval(
@@ -410,7 +426,20 @@ function App() {
     (sum, item) => sum + item.price * (item.quantity || 1),
     0,
   );
-  const placeOrder = () => setCart([]);
+  const placeOrder = async (values) => {
+    await apiRequest("/orders", {
+      method: "POST",
+      body: JSON.stringify({
+        items: cart.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity || 1,
+          ...(item.size ? { size: item.size } : {}),
+        })),
+        paymentMethod: values.payment,
+      }),
+    });
+    setCart([]);
+  };
   const section = (id, title, subtitle, items) => (
     <ProductSection
       id={id}
@@ -474,6 +503,7 @@ function App() {
             onWishlistToggle={toggleWishlist}
             user={user}
             onAuthenticated={handleAuthenticated}
+            onProfileUpdated={handleProfileUpdated}
             cart={cart}
             onPlaceOrder={placeOrder}
             loading={productsLoading}

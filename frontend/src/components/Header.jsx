@@ -121,6 +121,13 @@ export default function Header({
                   <>
                     <b className="pr-7">{user.displayName}</b>
                     <span className="text-xs text-[#77788d]">{user.email}</span>
+                    <a
+                      className="mt-2 rounded-full border border-[#dedde7] px-4 py-2.5 text-center font-semibold text-[#353793] hover:bg-[#f4f3f8]"
+                      href="/account"
+                      onClick={() => setAccountOpen(false)}
+                    >
+                      My dashboard
+                    </a>
                     {user.role === "admin" && (
                       <a
                         className="mt-2 rounded-full border border-[#dedde7] px-4 py-2.5 text-center font-semibold text-[#353793] hover:bg-[#f4f3f8]"
@@ -248,6 +255,15 @@ export default function Header({
                   </a>
                 )}
               </div>
+              {user && (
+                <a
+                  className="flex items-center justify-center rounded-xl border border-[#dedde7] px-3 py-3 text-sm font-semibold text-[#353793]"
+                  href="/account"
+                  onClick={() => setMobile(false)}
+                >
+                  My dashboard
+                </a>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <a
                   className="flex items-center justify-center gap-2 rounded-xl bg-[#353793] px-3 py-3 text-sm font-semibold text-white"

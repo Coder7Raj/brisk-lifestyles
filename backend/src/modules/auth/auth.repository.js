@@ -18,6 +18,17 @@ export async function createUser({ displayName, email, avatarUrl, passwordHash }
   return result.rows[0];
 }
 
+export async function updateProfile(userId, { displayName, avatarUrl }) {
+  const result = await pool.query(
+    `UPDATE identity.users
+     SET display_name = $2, avatar_url = $3, updated_at = now()
+     WHERE id = $1 AND is_active = true
+     RETURNING id, display_name, email, avatar_url, role`,
+    [userId, displayName, avatarUrl],
+  );
+  return result.rows[0] || null;
+}
+
 export async function createSession({ userId, tokenHash, expiresAt }) {
   await pool.query(
     "INSERT INTO identity.sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",

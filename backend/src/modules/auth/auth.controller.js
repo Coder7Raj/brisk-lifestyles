@@ -21,6 +21,13 @@ const registerSchema = z
   })
   .strict();
 
+const profileSchema = z.object({
+  displayName: z.string().trim().min(2).max(80),
+  avatarUrl: z.string().trim().max(2048).url()
+    .refine((value) => new URL(value).protocol === "https:", "Use a secure HTTPS image URL.")
+    .nullable(),
+}).strict();
+
 const loginSchema = z
   .object({
     email: z.string().trim().email().max(254),
@@ -99,6 +106,13 @@ export async function login(request, response) {
 
 export function me(request, response) {
   response.json({ data: { user: publicUser(request.user) } });
+}
+
+export async function updateProfile(request, response) {
+  const input = profileSchema.parse(request.body);
+  const user = await authService.updateProfile(request.user.id, input);
+  if (!user) return response.status(404).json({ error: "Account not found." });
+  response.json({ data: { user: publicUser(user) } });
 }
 
 export async function logout(request, response) {

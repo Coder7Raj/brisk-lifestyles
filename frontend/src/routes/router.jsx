@@ -4,7 +4,7 @@ const labelToPath = {
   home: "/",
   wishlist: "/wishlist",
   "sign in": "/login",
-  account: "/login",
+  account: "/account",
   men: "/men",
   women: "/women",
   perfumes: "/perfumes",
@@ -79,6 +79,7 @@ export function resolveRoute(pathname) {
   if (pathname === "/reviews")
     return { type: "reviews", title: "Customer reviews" };
   if (pathname === "/login") return { type: "login", title: "Sign in" };
+  if (pathname === "/account") return { type: "account", title: "My account" };
   if (pathname === "/register")
     return { type: "register", title: "Create account" };
   if (pathname === "/checkout") return { type: "checkout", title: "Checkout" };

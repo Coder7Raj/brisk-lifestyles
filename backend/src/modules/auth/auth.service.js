@@ -73,6 +73,10 @@ export async function register({ displayName, email, avatarUrl, password }) {
   });
 }
 
+export function updateProfile(userId, profile) {
+  return repository.updateProfile(userId, profile);
+}
+
 export async function authenticate({ email, password }) {
   const user = await repository.findUserByEmail(normalizeEmail(email));
   if (!user || !user.is_active || !(await verifyPassword(password, user.password_hash)))

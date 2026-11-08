@@ -33,8 +33,13 @@ CREATE TABLE IF NOT EXISTS orders (
   email text NOT NULL CHECK (length(email) <= 254),
   subtotal_paisa bigint NOT NULL CHECK (subtotal_paisa >= 0),
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'cancelled', 'fulfilled')),
+  payment_method text NOT NULL DEFAULT 'cod' CHECK (payment_method IN ('cod', 'mobile-banking')),
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS payment_method text NOT NULL DEFAULT 'cod'
+  CHECK (payment_method IN ('cod', 'mobile-banking'));
 
 CREATE TABLE IF NOT EXISTS order_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

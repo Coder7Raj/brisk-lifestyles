@@ -130,6 +130,8 @@ export function CheckoutPage({ cart, onPlaceOrder, user }) {
   );
   const shipping = subtotal >= 5000 || !subtotal ? 0 : 80;
   const [done, setDone] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState("");
   if (done)
     return (
       <section className="store-page checkout-success">
@@ -163,11 +165,19 @@ export function CheckoutPage({ cart, onPlaceOrder, user }) {
       </p>
       <form
         className="checkout-layout"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
+          setSubmitError("");
+          setSubmitting(true);
           const values = Object.fromEntries(new FormData(event.currentTarget));
-          onPlaceOrder(values);
-          setDone(true);
+          try {
+            await onPlaceOrder(values);
+            setDone(true);
+          } catch (error) {
+            setSubmitError(error.message);
+          } finally {
+            setSubmitting(false);
+          }
         }}
       >
         <div className="checkout-fields">
