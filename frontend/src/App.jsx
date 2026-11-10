@@ -36,6 +36,38 @@ const categoryColorClasses = {
   lavender: "bg-gradient-to-br from-[#9697e6] to-[#6668c9]",
 };
 const categoryColors = ["navy", "blue", "gold", "olive", "lavender"];
+const reviewExamples = [
+  {
+    quote:
+      "The fabric feels soft and breathable, and the stitching is excellent. Definitely worth the purchase!",
+    item: "Classic cotton punjabi",
+  },
+  {
+    quote:
+      "Absolutely love this fragrance! It has a rich, elegant scent that stays with me for hours.",
+    item: "Oud Noir eau de parfum",
+  },
+  {
+    quote:
+      "Beautiful embroidery and a lovely finish. It looks even more gorgeous when worn!",
+    item: "Embroidered kurti, ivory",
+  },
+  {
+    quote:
+      "Perfect for special occasions and everyday wear. The material is comfortable and the fit is just right.",
+    item: "Premium casual punjabi",
+  },
+  {
+    quote:
+      "A sophisticated fragrance with just the right balance. I've already received several compliments!",
+    item: "Luxury signature perfume",
+  },
+  {
+    quote:
+      "The color, design, and overall quality exceeded my expectations. I'm really happy with this purchase.",
+    item: "Elegant embroidered kurti",
+  },
+];
 
 function RoutePage({
   route,
@@ -103,14 +135,11 @@ function RoutePage({
         </p>
         <h1 className="mt-8 text-3xl font-extrabold">Customer reviews</h1>
         <p className="mt-2 text-sm text-[#77788d]">
-          What customers say about Brisk Lifestyles.
+          Preview examples of the kind of feedback we hope to hear from our
+          shoppers.
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {[
-            ["Comfortable fabric and a clean fit.", "Classic cotton punjabi"],
-            ["The scent lasts through the evening.", "Oud Noir eau de parfum"],
-            ["Lovely detailing, true to size.", "Embroidered kurti"],
-          ].map(([quote, item]) => (
+          {reviewExamples.map(({ quote, item }) => (
             <article
               key={item}
               className="rounded-2xl border border-[#e3e2e9] bg-white p-5"
@@ -897,8 +926,8 @@ function App() {
                     What customers say
                   </h2>
                   <p className="mt-1 text-xs text-[#77788d]">
-                    Sample reviews for design preview only. Replace with real
-                    customer reviews before launch.
+                    Review examples for preview. We’ll share customer feedback
+                    here as it comes in.
                   </p>
                 </div>
               </div>
@@ -922,39 +951,26 @@ function App() {
                   pointerStart.current = null;
                 }}
               >
-                {[
-                  [
-                    "Comfortable fabric and a clean fit.",
-                    "Classic cotton punjabi",
-                  ],
-                  [
-                    "The scent lasts through the evening.",
-                    "Cool Noir eau de parfum, 50 ml",
-                  ],
-                  [
-                    "Lovely detailing, true to size.",
-                    "Embroidered kurti, ivory",
-                  ],
-                ].map(([quote, title]) => (
+                {reviewExamples.map(({ quote, item }) => (
                   <article
                     className="w-[min(460px,80vw)] shrink-0 select-none rounded-[14px] border border-[#e3e2e9] border-t-2 border-t-[#e0b72f] bg-white p-4 max-[720px]:w-[84vw] max-[720px]:p-[13px]"
-                    key={title}
+                    key={item}
                   >
                     <div
                       className="text-[13px] tracking-[2px] text-[#e0b52c]"
                       aria-label="5 out of 5 stars"
                     >
-                      â˜…â˜…â˜…â˜…â˜…
+                      ★★★★★
                     </div>
                     <p className="my-2 min-h-[34px] text-xs text-[#45455f] max-[720px]:min-h-0">
-                      â€œSample review: {quote}â€
+                      “{quote}”
                     </p>
-                    <b className="block text-[11px]">Sample customer</b>
+                    <b className="block text-[11px]">Review example</b>
                     <a
                       className="mt-1 block text-[11px] text-[#717299] underline"
                       href={routeForLabel("Reviews")}
                     >
-                      {title}
+                      {item}
                     </a>
                   </article>
                 ))}
@@ -1021,7 +1037,10 @@ function App() {
                           ৳
                           {(item.price * (item.quantity || 1)).toLocaleString(
                             "en-BD",
-                            { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            },
                           )}
                         </strong>
                       </div>
@@ -1053,7 +1072,13 @@ function App() {
                 </div>
                 <div className="grid grid-cols-[1fr_auto] gap-3 pt-[17px] text-sm">
                   <span>Subtotal</span>
-                  <strong>৳{total.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                  <strong>
+                    ৳
+                    {total.toLocaleString("en-BD", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </strong>
                   <small className="col-span-2 text-[10px] text-[#828395]">
                     Delivery charges are calculated at checkout.
                   </small>
