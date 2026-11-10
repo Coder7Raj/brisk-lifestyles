@@ -2,7 +2,7 @@ import { app } from "./app.js";
 import { config } from "./config.js";
 import { pool } from "./db/pool.js";
 
-const server = app.listen(config.port, () =>
+const server = app.listen(config.port, "0.0.0.0", () =>
   console.log(`Brisk API listening on port ${config.port}`),
 );
 
