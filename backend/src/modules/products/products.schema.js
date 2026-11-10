@@ -6,7 +6,10 @@ const slug = z
   .min(1)
   .max(120)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use a lowercase, hyphenated slug.");
-const price = z.number().int().min(0).max(2_147_483_647);
+const price = z.number().finite().min(0).max(21_474_836.47).refine(
+  (value) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-8,
+  "Prices can have at most two decimal places.",
+);
 const comparePrice = price.nullable();
 const isHttpsUrl = (value) => {
   try {
@@ -20,8 +23,8 @@ const productFields = {
   name: z.string().trim().min(2).max(160),
   description: z.string().trim().max(5000),
   category: slug,
-  price_paisa: price,
-  compare_at_price_paisa: comparePrice,
+  price_taka: price,
+  compare_at_price_taka: comparePrice,
   image_url: z
     .string()
     .trim()
@@ -35,9 +38,9 @@ const productFields = {
 };
 
 const priceConstraint = (product) =>
-  product.compare_at_price_paisa == null ||
-  product.price_paisa == null ||
-  product.compare_at_price_paisa >= product.price_paisa;
+  product.compare_at_price_taka == null ||
+  product.price_taka == null ||
+  product.compare_at_price_taka >= product.price_taka;
 
 export const createProductSchema = z
   .object({
@@ -45,15 +48,15 @@ export const createProductSchema = z
     name: productFields.name,
     description: productFields.description.optional().default(""),
     category: productFields.category,
-    price_paisa: productFields.price_paisa,
-    compare_at_price_paisa: productFields.compare_at_price_paisa.optional().default(null),
+    price_taka: productFields.price_taka,
+    compare_at_price_taka: productFields.compare_at_price_taka.optional().default(null),
     image_url: productFields.image_url.optional().default(null),
     sizes: productFields.sizes.optional().default([]),
     in_stock: productFields.in_stock.optional().default(true),
   })
   .strict()
   .refine(priceConstraint, {
-    path: ["compare_at_price_paisa"],
+    path: ["compare_at_price_taka"],
     message: "Compare-at price must be at least the regular price.",
   })
   .refine((product) => new Set(product.sizes).size === product.sizes.length, {
@@ -69,7 +72,7 @@ export const updateProductSchema = z
     message: "Provide at least one product field to update.",
   })
   .refine(priceConstraint, {
-    path: ["compare_at_price_paisa"],
+    path: ["compare_at_price_taka"],
     message: "Compare-at price must be at least the regular price.",
   })
   .refine(

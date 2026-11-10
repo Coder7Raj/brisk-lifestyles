@@ -34,7 +34,7 @@ Product reads are public. Product creation, editing, deletion, and the complete 
 - `PATCH /api/products/:id` updates one or more product fields.
 - `DELETE /api/products/:id` soft deletes a product.
 
-Create and update bodies use the database field names, such as `price_paisa`, `compare_at_price_paisa`, `image_url`, `in_stock`, and `is_active`. Prices are integer paisa. For example:
+Create and update bodies use the database field names, such as `price_taka`, `compare_at_price_taka`, `image_url`, `in_stock`, and `is_active`. Prices are stored in taka with up to two decimal places. For example:
 
 ```json
 {
@@ -42,10 +42,12 @@ Create and update bodies use the database field names, such as `price_paisa`, `c
   "name": "Blue Cotton Punjabi",
   "description": "Lightweight cotton for everyday wear.",
   "category": "punjabi",
-  "price_paisa": 245000,
-  "compare_at_price_paisa": 294000,
+  "price_taka": 2450.00,
+  "compare_at_price_taka": 2940.00,
   "image_url": "https://example.com/blue-punjabi.jpg",
   "sizes": ["S", "M", "L", "XL"],
   "in_stock": true
 }
 ```
+
+Running the backend database migration command applies `database/migrations/20261110_prices_in_taka.sql` before the updated schema. It converts existing product prices and order totals to taka and skips conversion on a fresh or already-updated database.

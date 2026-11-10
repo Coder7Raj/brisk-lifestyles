@@ -1,16 +1,16 @@
 import { pool } from "../../db/pool.js";
 
-const columns = `id, slug, name, description, category, price_paisa,
-  compare_at_price_paisa, image_url, sizes, in_stock, is_active, created_at`;
-const publicColumns = `id, slug, name, description, category, price_paisa,
-  compare_at_price_paisa, image_url, sizes, in_stock`;
+const columns = `id, slug, name, description, category, price_taka,
+  compare_at_price_taka, image_url, sizes, in_stock, is_active, created_at`;
+const publicColumns = `id, slug, name, description, category, price_taka,
+  compare_at_price_taka, image_url, sizes, in_stock`;
 const mutableColumns = {
   slug: "slug",
   name: "name",
   description: "description",
   category: "category",
-  price_paisa: "price_paisa",
-  compare_at_price_paisa: "compare_at_price_paisa",
+  price_taka: "price_taka",
+  compare_at_price_taka: "compare_at_price_taka",
   image_url: "image_url",
   sizes: "sizes",
   in_stock: "in_stock",
@@ -53,7 +53,7 @@ export async function hasActiveCategory(slug) {
 export async function create(product) {
   const result = await pool.query(
     `INSERT INTO products
-       (slug, name, description, category, price_paisa, compare_at_price_paisa, image_url, sizes, in_stock)
+       (slug, name, description, category, price_taka, compare_at_price_taka, image_url, sizes, in_stock)
      SELECT $1, $2, $3, c.slug, $5, $6, $7, $8, $9
      FROM categories c WHERE c.slug = $4 AND c.is_active = true
      RETURNING ${columns}`,
@@ -62,8 +62,8 @@ export async function create(product) {
       product.name,
       product.description,
       product.category,
-      product.price_paisa,
-      product.compare_at_price_paisa,
+      product.price_taka,
+      product.compare_at_price_taka,
       product.image_url,
       product.sizes,
       product.in_stock,

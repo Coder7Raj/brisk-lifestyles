@@ -24,7 +24,7 @@ const orderSchema = z
 ordersRouter.get("/mine", requireAuth, async (request, response, next) => {
   try {
     const result = await pool.query(
-      `SELECT o.id, o.status, o.payment_method, o.subtotal_paisa, o.created_at,
+      `SELECT o.id, o.status, o.payment_method, o.subtotal_taka, o.created_at,
               COALESCE(json_agg(json_build_object(
                 'name', p.name, 'quantity', oi.quantity, 'size', oi.size
               ) ORDER BY p.name) FILTER (WHERE oi.id IS NOT NULL), '[]'::json) AS items
@@ -51,7 +51,7 @@ ordersRouter.post("/", requireAuth, requireSameOrigin, async (request, response,
     await client.query("BEGIN");
     const ids = [...new Set(input.items.map((item) => item.productId))];
     const { rows: products } = await client.query(
-      "SELECT id, price_paisa, in_stock, sizes FROM products WHERE id = ANY($1::uuid[]) AND is_active = true FOR UPDATE",
+      "SELECT id, price_taka, in_stock, sizes FROM products WHERE id = ANY($1::uuid[]) AND is_active = true FOR UPDATE",
       [ids],
     );
     const byId = new Map(products.map((item) => [item.id, item]));
@@ -75,22 +75,22 @@ ordersRouter.post("/", requireAuth, requireSameOrigin, async (request, response,
     }
     const subtotal = input.items.reduce(
       (sum, item) =>
-        sum + Number(byId.get(item.productId).price_paisa) * item.quantity,
+        sum + Math.round(Number(byId.get(item.productId).price_taka) * 100) * item.quantity,
       0,
-    );
+    ) / 100;
     const order = await client.query(
-      "INSERT INTO orders (user_id, email, subtotal_paisa, status, payment_method) VALUES ($1, $2, $3, $4, $5) RETURNING id, status, payment_method, subtotal_paisa, created_at",
+      "INSERT INTO orders (user_id, email, subtotal_taka, status, payment_method) VALUES ($1, $2, $3, $4, $5) RETURNING id, status, payment_method, subtotal_taka, created_at",
       [request.user.id, request.user.email, subtotal, "pending", input.paymentMethod],
     );
     for (const item of input.items) {
       const product = byId.get(item.productId);
       await client.query(
-        "INSERT INTO order_items (order_id, product_id, quantity, unit_price_paisa, size) VALUES ($1, $2, $3, $4, $5)",
+        "INSERT INTO order_items (order_id, product_id, quantity, unit_price_taka, size) VALUES ($1, $2, $3, $4, $5)",
         [
           order.rows[0].id,
           item.productId,
           item.quantity,
-          product.price_paisa,
+          product.price_taka,
           item.size || null,
         ],
       );
