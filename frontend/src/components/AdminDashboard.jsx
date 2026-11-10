@@ -67,6 +67,8 @@ export default function AdminDashboard({ user }) {
   const { refreshProducts } = useProducts();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [orderUpdating, setOrderUpdating] = useState("");
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -80,12 +82,14 @@ export default function AdminDashboard({ user }) {
   const load = async () => {
     setLoading(true);
     try {
-      const [items, categoryItems] = await Promise.all([
+      const [items, categoryItems, orderItems] = await Promise.all([
         apiRequest("/products/admin?limit=100"),
         apiRequest("/categories"),
+        apiRequest("/orders/admin"),
       ]);
       setProducts(items);
       setCategories(categoryItems);
+      setOrders(orderItems);
       setForm((current) =>
         current.category || !categoryItems.length
           ? current
@@ -219,6 +223,28 @@ export default function AdminDashboard({ user }) {
     }
   };
 
+  const updateOrderStatus = async (order, status) => {
+    setOrderUpdating(order.id);
+    try {
+      const updated = await apiRequest(`/orders/${order.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      setOrders((current) =>
+        current.map((item) =>
+          item.id === updated.id ? { ...item, status: updated.status } : item,
+        ),
+      );
+      toast.success(
+        status === "paid" ? "Order marked successful." : "Order cancelled.",
+      );
+    } catch (requestError) {
+      toast.error(requestError.message);
+    } finally {
+      setOrderUpdating("");
+    }
+  };
+
   return (
     <div className="min-h-[75vh] bg-[#f6f6f9] px-4 py-8 sm:px-8 sm:py-12">
       <div className="mx-auto max-w-[1250px]">
@@ -241,6 +267,87 @@ export default function AdminDashboard({ user }) {
             ＋ Add product
           </button>
         </div>
+        <section className="mb-8 rounded-2xl border border-[#e8e7ed] bg-white p-4 shadow-sm sm:p-6">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-extrabold">Customer orders</h2>
+              <p className="mt-1 text-sm text-[#77788d]">
+                Review order details and update pending order status.
+              </p>
+            </div>
+            <span className="text-sm text-[#77788d]">
+              {orders.filter((order) => order.status === "pending").length} pending
+            </span>
+          </div>
+          {loading ? (
+            <p className="py-8 text-center text-sm text-[#77788d]">Loading orders...</p>
+          ) : orders.length ? (
+            <div className="grid gap-3">
+              {orders.map((order) => {
+                const address = order.delivery_address || {};
+                const statusLabel = {
+                  paid: "Success",
+                  cancelled: "Cancelled",
+                  fulfilled: "Completed",
+                  pending: "Pending",
+                }[order.status] || order.status;
+                return (
+                  <article key={order.id} className="rounded-xl border border-[#eeedf1] p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold">Order {order.id.slice(0, 8).toUpperCase()}</p>
+                        <p className="mt-1 text-xs text-[#77788d]">
+                          {new Date(order.created_at).toLocaleString("en-BD")} · {order.payment_method === "cod" ? "Cash on delivery" : order.payment_method}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-[#f4f3f8] px-3 py-1 text-xs font-semibold text-[#353793]">
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
+                      <p><b>Customer:</b> {order.customer_name || order.account_name || "Customer"}</p>
+                      <p><b>Email:</b> {order.email}</p>
+                      <p><b>Phone:</b> {order.phone || "Not provided"}</p>
+                      <p><b>Delivery:</b> {[address.address, address.city, address.postalCode].filter(Boolean).join(", ") || "Not provided"}</p>
+                    </div>
+                    {address.notes && <p className="mt-1 text-sm"><b>Delivery notes:</b> {address.notes}</p>}
+                    <ul className="mt-3 grid gap-1 border-t border-[#eeedf1] pt-3 text-sm">
+                      {order.items.map((item, index) => (
+                        <li key={`${item.productId}-${index}`} className="flex flex-wrap justify-between gap-2">
+                          <span>{item.name || "Product"}{item.size ? ` · Size ${item.size}` : ""} × {item.quantity}</span>
+                          <span className="text-[#77788d]">{money(Number(item.unitPrice) * item.quantity)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#eeedf1] pt-3">
+                      <b>Total {money(order.subtotal_taka)}</b>
+                      {order.status === "pending" && (
+                        <div className="flex gap-2">
+                          <button
+                            disabled={orderUpdating === order.id}
+                            onClick={() => updateOrderStatus(order, "paid")}
+                            className="rounded-full bg-[#353793] px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+                          >
+                            Mark successful
+                          </button>
+                          <button
+                            disabled={orderUpdating === order.id}
+                            onClick={() => updateOrderStatus(order, "cancelled")}
+                            className="rounded-full border border-red-200 px-4 py-2 text-xs font-bold text-red-700 disabled:opacity-60"
+                          >
+                            Cancel order
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-[#77788d]">No orders yet.</p>
+          )}
+        </section>
         <form onSubmit={addCategory} className="mb-6 grid gap-3 rounded-2xl border border-[#e8e7ed] bg-white p-4 sm:grid-cols-[1fr_1fr_auto]">
           <input required maxLength="120" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder="New category name" aria-label="New category name" className="h-11 rounded-xl border border-[#e4e3e9] px-4 text-sm" />
           <input maxLength="500" value={categoryDescription} onChange={(event) => setCategoryDescription(event.target.value)} placeholder="Description (optional)" aria-label="Category description" className="h-11 rounded-xl border border-[#e4e3e9] px-4 text-sm" />

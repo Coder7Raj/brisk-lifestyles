@@ -328,7 +328,11 @@ export default function AccountDashboard({
                     Order {order.id.slice(0, 8).toUpperCase()}
                   </b>
                   <span className="rounded-full bg-[#f4f3f8] px-3 py-1 text-xs font-semibold capitalize text-[#353793]">
-                    {order.status}
+                    {{
+                      paid: "Success",
+                      cancelled: "Cancelled",
+                      fulfilled: "Completed",
+                    }[order.status] || order.status}
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-[#77788d]">

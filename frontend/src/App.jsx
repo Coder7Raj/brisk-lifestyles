@@ -96,7 +96,7 @@ function RoutePage({
     loading &&
     ["product", "category", "search", "offers"].includes(route.type)
   )
-    return <BriskLoader label="Loading your collection" />;
+    return <BriskLoader label="Loading your collection" fullScreen />;
   if (route.type === "login")
     return <Login user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "admin") return <AdminDashboard user={user} />;
@@ -250,6 +250,10 @@ function App() {
     error: productsError,
   } = useProducts();
   const [cart, setCart] = useState([]);
+  const paymentReturn = new URLSearchParams(window.location.search).get(
+    "payment",
+  );
+  const successfulPaymentReturn = paymentReturn === "success";
   const [user, setUser] = useState(null);
   const [wishlist, setWishlist] = useState([]);
   const readWishlist = (userId) => {
@@ -274,7 +278,9 @@ function App() {
   };
   const handleAuthenticated = (nextUser) => {
     setWishlist(readWishlist(nextUser.id));
-    setCart(readCart(nextUser.id));
+    setCart(successfulPaymentReturn ? [] : readCart(nextUser.id));
+    if (successfulPaymentReturn)
+      localStorage.removeItem(`brisk-cart:${nextUser.id}`);
     setUser(nextUser);
   };
   const handleProfileUpdated = (nextUser) => setUser(nextUser);
@@ -562,7 +568,9 @@ function App() {
           />
         ) : (
           <>
-            {productsLoading && <BriskLoader label="Loading your collection" />}
+            {productsLoading && (
+              <BriskLoader label="Loading your collection" fullScreen />
+            )}
             <section
               className={`relative isolate flex min-h-[430px] items-center overflow-hidden bg-[#20216b] text-white transition-colors duration-700 ${
                 heroSlide === 1
