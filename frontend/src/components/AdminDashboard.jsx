@@ -307,16 +307,16 @@ export default function AdminDashboard({ user }) {
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-[#e8e7ed] bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] text-left text-sm">
+            <div className="hidden lg:block">
+              <table className="w-full table-fixed text-left text-sm">
                 <thead className="bg-[#f9f9fb] text-[11px] uppercase tracking-wider text-[#77788d]">
                   <tr>
-                    <th className="px-5 py-4">Product</th>
-                    <th className="px-4 py-4">Category</th>
-                    <th className="px-4 py-4">Price</th>
-                    <th className="px-4 py-4">Sizes</th>
-                    <th className="px-4 py-4">Status</th>
-                    <th className="px-5 py-4 text-right">Actions</th>
+                    <th className="w-[34%] px-4 py-4">Product</th>
+                    <th className="w-[14%] px-3 py-4">Category</th>
+                    <th className="w-[13%] px-3 py-4">Price</th>
+                    <th className="w-[12%] px-3 py-4">Sizes</th>
+                    <th className="w-[13%] px-3 py-4">Status</th>
+                    <th className="w-[14%] px-3 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eeedf1]">
@@ -335,7 +335,7 @@ export default function AdminDashboard({ user }) {
                               ◇
                             </div>
                           )}
-                          <div>
+                          <div className="min-w-0">
                             <p className="font-bold text-[#191943]">
                               {item.name}
                             </p>
@@ -392,6 +392,38 @@ export default function AdminDashboard({ user }) {
                 </tbody>
               </table>
             </div>
+            <ul className="divide-y divide-[#eeedf1] lg:hidden">
+              {filtered.map((item) => (
+                <li key={item.id} className="min-w-0 p-4 sm:p-5">
+                  <div className="flex min-w-0 items-start gap-3">
+                    {item.image_url ? (
+                      <img src={item.image_url} alt="" className="h-14 w-14 shrink-0 rounded-xl border border-[#eeedf1] object-cover" />
+                    ) : (
+                      <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-[#f1f0f8] text-xl">◇</div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words font-bold text-[#191943]">{item.name}</p>
+                      <p className="mt-1 break-all text-xs text-[#85869b]">{item.slug}</p>
+                      <p className="mt-1 text-xs capitalize text-[#77788d]">{item.category.replaceAll("-", " ")}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${item.is_active && item.in_stock ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800"}`}>
+                      {!item.is_active ? "Archived" : item.in_stock ? "In stock" : "Out of stock"}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+                    <div className="text-sm">
+                      <b>{money(item.price_paisa)}</b>
+                      {item.compare_at_price_paisa != null && <span className="ml-2 text-xs text-[#85869b]"><s>{money(item.compare_at_price_paisa)}</s></span>}
+                      <p className="mt-1 text-xs text-[#77788d]">Sizes: {item.sizes?.length ? item.sizes.join(", ") : "—"}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => startEdit(item)} className="rounded-full border border-[#dedde7] px-3 py-2 text-xs font-bold hover:bg-[#f4f3f8]">Edit</button>
+                      <button onClick={() => remove(item)} className="rounded-full border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50">Delete</button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         {editor && (

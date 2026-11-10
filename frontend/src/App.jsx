@@ -2,10 +2,10 @@
   ArrowRight,
   Check,
   Home,
+  LogOut,
   Minus,
   Plus,
   ShoppingBag,
-  UserRound,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -82,7 +82,15 @@ function RoutePage({
   if (route.type === "login")
     return <Login user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "admin") return <AdminDashboard user={user} />;
-  if (route.type === "account") return <AccountDashboard user={user} cart={cart} wishlist={wishlist} onProfileUpdated={onProfileUpdated} />;
+  if (route.type === "account")
+    return (
+      <AccountDashboard
+        user={user}
+        cart={cart}
+        wishlist={wishlist}
+        onProfileUpdated={onProfileUpdated}
+      />
+    );
   if (route.type === "register")
     return <Register user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "product") {
@@ -197,9 +205,9 @@ function RoutePage({
   );
 }
 
-function AdminBar({ user, onLogout }) {
+function AdminBar({ onLogout }) {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-[#e9e6df] bg-white px-5 sm:px-10">
+    <header className="flex justify-between h-14 w-full min-w-0 items-center border-b border-[#e9e6df] bg-white lg:px-28 px-3 sm:h-16 sm:px-6">
       <a
         href="/"
         aria-label="Home"
@@ -210,14 +218,10 @@ function AdminBar({ user, onLogout }) {
       <button
         onClick={onLogout}
         aria-label="Sign out"
-        title="Sign out"
-        className="grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-[#e4e2df] bg-white text-[#353793]"
+        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-[#e4e2df] bg-white px-4 text-sm font-semibold text-[#353793] hover:bg-[#f7f6fa]"
       >
-        {user?.avatarUrl ? (
-          <img src={user.avatarUrl} alt="Sign out" className="h-full w-full object-cover" />
-        ) : (
-          <UserRound size={20} />
-        )}
+        <LogOut size={17} />
+        <span>Sign out</span>
       </button>
     </header>
   );
@@ -245,7 +249,9 @@ function App() {
   };
   const readCart = (userId) => {
     try {
-      const saved = JSON.parse(localStorage.getItem(`brisk-cart:${userId}`) || "[]");
+      const saved = JSON.parse(
+        localStorage.getItem(`brisk-cart:${userId}`) || "[]",
+      );
       return Array.isArray(saved) ? saved : [];
     } catch {
       return [];
@@ -286,7 +292,8 @@ function App() {
     }
   }, [wishlist, user]);
   useEffect(() => {
-    if (user) localStorage.setItem(`brisk-cart:${user.id}`, JSON.stringify(cart));
+    if (user)
+      localStorage.setItem(`brisk-cart:${user.id}`, JSON.stringify(cart));
   }, [cart, user]);
   useEffect(() => {
     document.title =
