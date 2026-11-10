@@ -13,6 +13,7 @@ import AccountDashboard from "./components/AccountDashboard.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import Login from "./components/auth/Login.jsx";
 import Register from "./components/auth/Register.jsx";
+import BriskLoader from "./components/BriskLoader.jsx";
 import Footer from "./components/Footer.jsx";
 import Header from "./components/Header.jsx";
 import ProductArt from "./components/ProductArt.jsx";
@@ -95,11 +96,7 @@ function RoutePage({
     loading &&
     ["product", "category", "search", "offers"].includes(route.type)
   )
-    return (
-      <p className="mx-auto min-h-[55vh] max-w-[1250px] px-5 py-16 text-center text-[#77788d]">
-        Loading products…
-      </p>
-    );
+    return <BriskLoader label="Loading your collection" />;
   if (route.type === "login")
     return <Login user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "admin") return <AdminDashboard user={user} />;
@@ -453,7 +450,7 @@ function App() {
     0,
   );
   const placeOrder = async (values) => {
-    await apiRequest("/orders", {
+    const result = await apiRequest("/orders", {
       method: "POST",
       body: JSON.stringify({
         items: cart.map((item) => ({
@@ -462,10 +459,41 @@ function App() {
           ...(item.size ? { size: item.size } : {}),
         })),
         paymentMethod: values.payment,
+        customerName: `${values.firstName} ${values.lastName}`.trim(),
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+        city: values.city,
+        postalCode: values.postalCode,
+        notes: values.notes || "",
       }),
     });
+    if (result.paymentUrl) {
+      window.location.assign(result.paymentUrl);
+      return false;
+    }
     setCart([]);
+    return true;
   };
+  useEffect(() => {
+    const payment = new URLSearchParams(window.location.search).get("payment");
+    if (!payment) return;
+    if (payment === "success") {
+      setCart([]);
+      toast.success("Payment confirmed. Your order is being prepared.");
+    } else if (payment === "pending") {
+      toast.info(
+        "Payment received for verification. We will update your order shortly.",
+      );
+    } else {
+      toast.error(
+        payment === "cancel"
+          ? "Payment was cancelled."
+          : "Payment was not completed.",
+      );
+    }
+    window.history.replaceState({}, "", "/checkout");
+  }, []);
   const section = (id, title, subtitle, items) => (
     <ProductSection
       id={id}
@@ -534,14 +562,7 @@ function App() {
           />
         ) : (
           <>
-            {productsLoading && (
-              <p
-                className="mx-auto max-w-[1250px] px-5 py-4 text-center text-sm text-[#77788d]"
-                role="status"
-              >
-                Loading products…
-              </p>
-            )}
+            {productsLoading && <BriskLoader label="Loading your collection" />}
             <section
               className={`relative isolate flex min-h-[430px] items-center overflow-hidden bg-[#20216b] text-white transition-colors duration-700 ${
                 heroSlide === 1

@@ -125,6 +125,7 @@ function ProductInfo({ product, saved, onWishlistToggle, onAdd }) {
 }
 
 export function CheckoutPage({ cart, onPlaceOrder, user }) {
+  const paymentState = new URLSearchParams(window.location.search).get("payment");
   const subtotal = cart.reduce(
     (sum, item) => sum + item.price * (item.quantity || 1),
     0,
@@ -132,7 +133,7 @@ export function CheckoutPage({ cart, onPlaceOrder, user }) {
   const shipping = subtotal >= 5000 || !subtotal ? 0 : 80;
   const [done, setDone] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
-  if (done)
+  if (done || paymentState === "success")
     return (
       <section className="store-page checkout-success">
         <div className="success-mark">✓</div>
@@ -170,8 +171,8 @@ export function CheckoutPage({ cart, onPlaceOrder, user }) {
           setSubmitting(true);
           const values = Object.fromEntries(new FormData(event.currentTarget));
           try {
-            await onPlaceOrder(values);
-            setDone(true);
+            const completed = await onPlaceOrder(values);
+            if (completed) setDone(true);
           } catch (error) {
             toast.error(error.message);
           } finally {
@@ -246,9 +247,9 @@ export function CheckoutPage({ cart, onPlaceOrder, user }) {
               Cash on delivery <span>Pay when your order arrives</span>
             </label>
             <label className="payment-choice">
-              <input type="radio" name="payment" value="mobile-banking" />{" "}
-              Mobile banking{" "}
-              <span>We’ll share payment instructions after confirmation</span>
+              <input type="radio" name="payment" value="sslcommerz" />{" "}
+              Pay online with SSLCOMMERZ{" "}
+              <span>Cards, mobile banking and internet banking</span>
             </label>
           </fieldset>
         </div>
@@ -288,8 +289,8 @@ export function CheckoutPage({ cart, onPlaceOrder, user }) {
             <span>Total</span>
             <b>{money(subtotal + shipping)}</b>
           </div>
-          <button className="primary-action" type="submit">
-            Place order · {money(subtotal + shipping)}
+          <button className="primary-action checkout-submit" type="submit" disabled={submitting}>
+            {submitting ? <><span className="checkout-submit-spinner" aria-hidden="true" /> Preparing secure checkout…</> : `Place order · ${money(subtotal + shipping)}`}
           </button>
           <p className="secure-note">
             <ShieldCheck size={15} /> Your information is kept secure.

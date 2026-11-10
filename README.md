@@ -11,6 +11,10 @@ A responsive fashion and fragrance storefront with a React/Vite frontend, Expres
 
 The migration applies the storefront schema in `database/schema.sql` and the separate PostgreSQL `identity` schema in `database/users.sql`. The API health endpoint is `/api/health`.
 
+## SSLCOMMERZ sandbox payments
+
+Configure `SSLCOMMERZ_STORE_ID`, `SSLCOMMERZ_STORE_PASSWORD`, `SSLCOMMERZ_SANDBOX=true`, `PUBLIC_API_URL`, and `WEB_URL` in `backend/.env`. The Store Password must remain on the server. The payment notification URL is `${PUBLIC_API_URL}/api/orders/payment/ipn`; configure it in the SSLCOMMERZ merchant panel. The API needs a publicly reachable HTTPS URL for IPN and callback delivery, and the host must support TLS 1.2 or newer. Run `npm run db:migrate` after updating the backend. Online payments redirect to the SSLCOMMERZ hosted checkout; callback and IPN transactions are validated with the Order Validation API for status, transaction ID, BDT currency, and expected amount. Risk flagged transactions remain pending for manual review.
+
 ## Project layout
 
 - `frontend/` React components, catalog data, styling, and Vite configuration.

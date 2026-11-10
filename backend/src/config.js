@@ -12,6 +12,11 @@ export const config = {
   webOrigin: process.env.WEB_ORIGIN || "http://localhost:5173",
   dbSsl: process.env.DB_SSL === "true",
   jwtSecret: process.env.JWT_SECRET || "",
+  sslcommerzStoreId: process.env.SSLCOMMERZ_STORE_ID || "",
+  sslcommerzStorePassword: process.env.SSLCOMMERZ_STORE_PASSWORD || "",
+  sslcommerzSandbox: process.env.SSLCOMMERZ_SANDBOX !== "false",
+  publicApiUrl: process.env.PUBLIC_API_URL || "",
+  webUrl: process.env.WEB_ORIGIN || "http://localhost:5173",
 };
 
 if (config.jwtSecret.length < 32)

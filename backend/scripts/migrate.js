@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { pool } from "../src/db/pool.js";
 
 try {
-  for (const file of ["migrations/20261110_prices_in_taka.sql", "schema.sql", "users.sql"]) {
+  for (const file of ["migrations/20261110_prices_in_taka.sql", "schema.sql", "users.sql", "migrations/20261110_sslcommerz.sql"]) {
     const schemaPath = fileURLToPath(
       new URL(`../../database/${file}`, import.meta.url),
     );
