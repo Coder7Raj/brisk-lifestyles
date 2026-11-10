@@ -1,6 +1,5 @@
 ﻿import {
   ArrowRight,
-  Check,
   Home,
   LogOut,
   Minus,
@@ -9,6 +8,7 @@
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import AccountDashboard from "./components/AccountDashboard.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import Login from "./components/auth/Login.jsx";
@@ -49,7 +49,6 @@ function RoutePage({
   cart,
   onPlaceOrder,
   loading,
-  error,
 }) {
   const [sortOrder, setSortOrder] = useState("featured");
   const sortedProducts = [...items].sort((a, b) =>
@@ -69,16 +68,6 @@ function RoutePage({
         Loading products…
       </p>
     );
-  if (error && ["product", "category", "search", "offers"].includes(route.type))
-    return (
-      <p
-        className="mx-auto min-h-[55vh] max-w-[1250px] px-5 py-16 text-center text-red-700"
-        role="alert"
-      >
-        {error}
-      </p>
-    );
-
   if (route.type === "login")
     return <Login user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "admin") return <AdminDashboard user={user} />;
@@ -265,11 +254,13 @@ function App() {
   const handleProfileUpdated = (nextUser) => setUser(nextUser);
   const { pathname } = useRouter();
   const [cartOpen, setCartOpen] = useState(false);
-  const [toast, setToast] = useState("");
   const [heroSlide, setHeroSlide] = useState(0);
   const [showTop, setShowTop] = useState(false);
   const route = resolveRoute(pathname.split("?")[0]);
   const routeProducts = getRouteProducts(route, products, wishlist);
+  useEffect(() => {
+    if (productsError) toast.error(productsError);
+  }, [productsError]);
   useEffect(() => {
     setAuthExpiredHandler(() => {
       setUser(null);
@@ -404,8 +395,8 @@ function App() {
           : item,
       );
     });
-    setToast(notice);
-    window.setTimeout(() => setToast(""), 2400);
+    if (existing && existing.quantity >= 10) toast.info(notice);
+    else toast.success(notice);
   };
   const changeQuantity = (lineId, change) =>
     setCart((current) =>
@@ -417,9 +408,8 @@ function App() {
     );
   const toggleWishlist = (product) => {
     if (!user) {
-      setToast("Sign in to save products to your wishlist.");
+      toast.info("Sign in to save products to your wishlist.");
       navigateTo("/login");
-      window.setTimeout(() => setToast(""), 2400);
       return;
     }
     setWishlist((current) =>
@@ -469,11 +459,10 @@ function App() {
               await apiRequest("/auth/logout", { method: "POST" });
               setUser(null);
               setWishlist([]);
-              setToast("You have signed out.");
+              toast.success("You have signed out.");
             } catch (error) {
-              setToast(error.message);
+              toast.error(error.message);
             }
-            window.setTimeout(() => setToast(""), 2400);
           }}
         />
       ) : (
@@ -487,11 +476,10 @@ function App() {
               await apiRequest("/auth/logout", { method: "POST" });
               setUser(null);
               setWishlist([]);
-              setToast("You have signed out.");
+              toast.success("You have signed out.");
             } catch (error) {
-              setToast(error.message);
+              toast.error(error.message);
             }
-            window.setTimeout(() => setToast(""), 2400);
           }}
           onSearch={(query) => {
             const normalized = query.trim();
@@ -514,7 +502,6 @@ function App() {
             cart={cart}
             onPlaceOrder={placeOrder}
             loading={productsLoading}
-            error={productsError}
           />
         ) : (
           <>
@@ -524,14 +511,6 @@ function App() {
                 role="status"
               >
                 Loading products…
-              </p>
-            )}
-            {productsError && (
-              <p
-                className="mx-auto max-w-[1250px] px-5 py-4 text-center text-sm text-red-700"
-                role="alert"
-              >
-                {productsError}
               </p>
             )}
             <section
@@ -994,15 +973,6 @@ function App() {
         </button>
       )}
       {route.type !== "admin" && <Footer />}
-      {toast && route.type !== "admin" && (
-        <div
-          className="fixed bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#17173f] px-[17px] py-3 text-xs text-white shadow-xl"
-          role="status"
-        >
-          <Check size={16} />
-          {toast}
-        </div>
-      )}
       {cartOpen && route.type !== "admin" && (
         <div
           className="fixed inset-0 z-[40] flex justify-end bg-[#0e0f2b]/50"
@@ -1051,6 +1021,7 @@ function App() {
                           ৳
                           {(item.price * (item.quantity || 1)).toLocaleString(
                             "en-BD",
+                            { minimumFractionDigits: 2, maximumFractionDigits: 2 },
                           )}
                         </strong>
                       </div>
@@ -1082,7 +1053,7 @@ function App() {
                 </div>
                 <div className="grid grid-cols-[1fr_auto] gap-3 pt-[17px] text-sm">
                   <span>Subtotal</span>
-                  <strong>৳{total.toLocaleString("en-BD")}</strong>
+                  <strong>৳{total.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                   <small className="col-span-2 text-[10px] text-[#828395]">
                     Delivery charges are calculated at checkout.
                   </small>

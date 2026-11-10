@@ -1,9 +1,9 @@
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { navigateTo } from "../../routes/router.jsx";
 import { apiRequest } from "../../services/api.js";
 
 export default function Register({ user, onAuthenticated }) {
-  const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   if (user) return <SignedIn user={user} />;
@@ -17,7 +17,6 @@ export default function Register({ user, onAuthenticated }) {
         className="mt-7 grid gap-4"
         onSubmit={async (event) => {
           event.preventDefault();
-          setError("");
           setSubmitting(true);
           const payload = Object.fromEntries(
             new FormData(event.currentTarget).entries(),
@@ -31,7 +30,7 @@ export default function Register({ user, onAuthenticated }) {
             onAuthenticated(result.user);
             navigateTo("/");
           } catch (requestError) {
-            setError(requestError.message);
+            toast.error(requestError.message);
           } finally {
             setSubmitting(false);
           }
@@ -85,11 +84,6 @@ export default function Register({ user, onAuthenticated }) {
             Use at least 10 characters.
           </small>
         </label>
-        {error && (
-          <p className="text-sm text-red-700" role="alert">
-            {error}
-          </p>
-        )}
         <button
           disabled={submitting}
           className="mt-2 h-12 rounded-full bg-[#353793] text-sm font-bold text-white disabled:opacity-60"

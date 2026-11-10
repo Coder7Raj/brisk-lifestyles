@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { apiRequest } from "../services/api.js";
 import { useProducts } from "../services/products.jsx";
 
@@ -13,18 +14,18 @@ const emptyProduct = {
   sizes: "",
   inStock: true,
 };
-const money = (paisa) =>
-  `৳${(Number(paisa || 0) / 100).toLocaleString("en-BD", { minimumFractionDigits: 2 })}`;
+const money = (taka) =>
+  `৳${Number(taka || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const toForm = (item) => ({
   slug: item.slug,
   name: item.name,
   category: item.category,
   description: item.description || "",
-  price: String(item.price_paisa / 100),
+  price: String(item.price_taka),
   comparePrice:
-    item.compare_at_price_paisa == null
+    item.compare_at_price_taka == null
       ? ""
-      : String(item.compare_at_price_paisa / 100),
+      : String(item.compare_at_price_taka),
   imageUrl: item.image_url || "",
   sizes: (item.sizes || []).join(", "),
   inStock: item.in_stock,
@@ -37,9 +38,9 @@ const slugify = (value) =>
     .replace(/^-|-$/g, "");
 
 function payloadFrom(form) {
-  const price = Math.round(Number(form.price) * 100);
+  const price = Number(Number(form.price).toFixed(2));
   const compare = form.comparePrice.trim()
-    ? Math.round(Number(form.comparePrice) * 100)
+    ? Number(Number(form.comparePrice).toFixed(2))
     : null;
   if (!Number.isFinite(price) || price < 0)
     throw new Error("Enter a valid product price.");
@@ -50,8 +51,8 @@ function payloadFrom(form) {
     name: form.name.trim(),
     category: form.category,
     description: form.description.trim(),
-    price_paisa: price,
-    compare_at_price_paisa: compare,
+    price_taka: price,
+    compare_at_price_taka: compare,
     image_url: form.imageUrl.trim() || null,
     sizes: /fragrance|perfume|attar|scent/i.test(form.category) ? [] : form.sizes
       .toUpperCase()
@@ -67,8 +68,6 @@ export default function AdminDashboard({ user }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [editor, setEditor] = useState(null);
@@ -80,7 +79,6 @@ export default function AdminDashboard({ user }) {
 
   const load = async () => {
     setLoading(true);
-    setError("");
     try {
       const [items, categoryItems] = await Promise.all([
         apiRequest("/products/admin?limit=100"),
@@ -94,7 +92,7 @@ export default function AdminDashboard({ user }) {
           : { ...current, category: categoryItems[0].slug },
       );
     } catch (requestError) {
-      setError(requestError.message);
+      toast.error(requestError.message);
     } finally {
       setLoading(false);
     }
@@ -146,8 +144,6 @@ export default function AdminDashboard({ user }) {
 
   const addCategory = async (event) => {
     event.preventDefault();
-    setError("");
-    setNotice("");
     setCategorySaving(true);
     try {
       const name = categoryName.trim();
@@ -159,9 +155,9 @@ export default function AdminDashboard({ user }) {
       setCategoryName("");
       setCategoryDescription("");
       setForm((current) => ({ ...current, category: category.slug, sizes: /fragrance|perfume|attar|scent/i.test(category.slug) ? "" : current.sizes }));
-      setNotice(`${category.name} category added.`);
+      toast.success(`${category.name} category added.`);
     } catch (requestError) {
-      setError(requestError.message);
+      toast.error(requestError.message);
     } finally {
       setCategorySaving(false);
     }
@@ -170,17 +166,13 @@ export default function AdminDashboard({ user }) {
   const startCreate = () => {
     setEditor("create");
     setForm({ ...emptyProduct, category: categories[0]?.slug || "" });
-    setError("");
   };
   const startEdit = (item) => {
     setEditor(item);
     setForm(toForm(item));
-    setError("");
   };
   const save = async (event) => {
     event.preventDefault();
-    setError("");
-    setNotice("");
     setSaving(true);
     try {
       const payload = payloadFrom(form);
@@ -201,9 +193,9 @@ export default function AdminDashboard({ user }) {
       );
       await refreshProducts();
       setEditor(null);
-      setNotice(editor === "create" ? "Product created." : "Product updated.");
+      toast.success(editor === "create" ? "Product created." : "Product updated.");
     } catch (requestError) {
-      setError(requestError.message);
+      toast.error(requestError.message);
     } finally {
       setSaving(false);
     }
@@ -215,17 +207,15 @@ export default function AdminDashboard({ user }) {
       )
     )
       return;
-    setError("");
-    setNotice("");
     try {
       await apiRequest(`/products/${item.id}`, { method: "DELETE" });
       setProducts((current) =>
         current.filter((product) => product.id !== item.id),
       );
       await refreshProducts();
-      setNotice(`${item.name} deleted.`);
+      toast.success(`${item.name} deleted.`);
     } catch (requestError) {
-      setError(requestError.message);
+      toast.error(requestError.message);
     }
   };
 
@@ -251,14 +241,6 @@ export default function AdminDashboard({ user }) {
             ＋ Add product
           </button>
         </div>
-        {(error || notice) && (
-          <p
-            role={error ? "alert" : "status"}
-            className={`mb-5 rounded-xl px-4 py-3 text-sm ${error ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"}`}
-          >
-            {error || notice}
-          </p>
-        )}
         <form onSubmit={addCategory} className="mb-6 grid gap-3 rounded-2xl border border-[#e8e7ed] bg-white p-4 sm:grid-cols-[1fr_1fr_auto]">
           <input required maxLength="120" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder="New category name" aria-label="New category name" className="h-11 rounded-xl border border-[#e4e3e9] px-4 text-sm" />
           <input maxLength="500" value={categoryDescription} onChange={(event) => setCategoryDescription(event.target.value)} placeholder="Description (optional)" aria-label="Category description" className="h-11 rounded-xl border border-[#e4e3e9] px-4 text-sm" />
@@ -350,10 +332,10 @@ export default function AdminDashboard({ user }) {
                         {item.category.replaceAll("-", " ")}
                       </td>
                       <td className="px-4 py-4">
-                        <b>{money(item.price_paisa)}</b>
-                        {item.compare_at_price_paisa != null && (
+                        <b>{money(item.price_taka)}</b>
+                        {item.compare_at_price_taka != null && (
                           <p className="mt-1 text-xs text-[#85869b]">
-                            <s>{money(item.compare_at_price_paisa)}</s>
+                            <s>{money(item.compare_at_price_taka)}</s>
                           </p>
                         )}
                       </td>
@@ -412,8 +394,8 @@ export default function AdminDashboard({ user }) {
                   </div>
                   <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
                     <div className="text-sm">
-                      <b>{money(item.price_paisa)}</b>
-                      {item.compare_at_price_paisa != null && <span className="ml-2 text-xs text-[#85869b]"><s>{money(item.compare_at_price_paisa)}</s></span>}
+                      <b>{money(item.price_taka)}</b>
+                      {item.compare_at_price_taka != null && <span className="ml-2 text-xs text-[#85869b]"><s>{money(item.compare_at_price_taka)}</s></span>}
                       <p className="mt-1 text-xs text-[#77788d]">Sizes: {item.sizes?.length ? item.sizes.join(", ") : "—"}</p>
                     </div>
                     <div className="flex gap-2">

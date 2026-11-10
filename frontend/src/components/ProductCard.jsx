@@ -48,11 +48,11 @@ export default function ProductCard({
           {product.name}
         </h3>
         <div className="flex items-center gap-[6px] text-sm font-extrabold text-[#202050] max-[720px]:flex-wrap max-[720px]:gap-1 max-[720px]:text-xs">
-          ৳{product.price.toLocaleString("en-BD")}
+          ৳{product.price.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           {product.originalPrice > product.price && (
             <>
               <del className="text-[10px] font-medium text-[#9494a3] max-[720px]:text-[9px]">
-                ৳{product.originalPrice.toLocaleString("en-BD")}
+                ৳{product.originalPrice.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </del>
               <span className="rounded-[9px] bg-[#fff1c8] px-[6px] py-[3px] text-[9px] text-[#8c6910]">
                 {Math.round((1 - product.price / product.originalPrice) * 100)}% off

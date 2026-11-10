@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { apiRequest } from "../services/api.js";
 
 const money = (value) =>
-  String.fromCharCode(2547) + Number(value || 0).toLocaleString("en-BD");
+  String.fromCharCode(2547) + Number(value || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const paymentLabel = (value) =>
   value === "mobile-banking" ? "Mobile banking" : "Cash on delivery";
 
@@ -16,11 +17,8 @@ export default function AccountDashboard({
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [saving, setSaving] = useState(false);
-  const [profileError, setProfileError] = useState("");
-  const [notice, setNotice] = useState("");
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(Boolean(user));
-  const [ordersError, setOrdersError] = useState("");
 
   useEffect(() => {
     setDisplayName(user?.displayName || "");
@@ -35,13 +33,12 @@ export default function AccountDashboard({
     }
     let active = true;
     setOrdersLoading(true);
-    setOrdersError("");
     apiRequest("/orders/mine")
       .then((items) => {
         if (active) setOrders(items);
       })
       .catch((error) => {
-        if (active) setOrdersError(error.message);
+        if (active) toast.error(error.message);
       })
       .finally(() => {
         if (active) setOrdersLoading(false);
@@ -53,8 +50,6 @@ export default function AccountDashboard({
 
   const saveProfile = async (event) => {
     event.preventDefault();
-    setProfileError("");
-    setNotice("");
     setSaving(true);
     try {
       const result = await apiRequest("/auth/me", {
@@ -66,9 +61,9 @@ export default function AccountDashboard({
       });
       onProfileUpdated(result.user);
       setEditing(false);
-      setNotice("Your profile has been updated.");
+      toast.success("Your profile has been updated.");
     } catch (error) {
-      setProfileError(error.message);
+      toast.error(error.message);
     } finally {
       setSaving(false);
     }
@@ -110,7 +105,6 @@ export default function AccountDashboard({
         {!editing && (
           <button
             onClick={() => {
-              setNotice("");
               setEditing(true);
             }}
             className="rounded-full bg-[#353793] px-5 py-3 text-sm font-bold text-white"
@@ -120,14 +114,6 @@ export default function AccountDashboard({
         )}
       </div>
 
-      {notice && (
-        <p
-          className="mt-5 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800"
-          role="status"
-        >
-          {notice}
-        </p>
-      )}
       <section className="mt-6 rounded-2xl border border-[#e8e7ed] bg-white p-5 sm:p-7">
         <h2 className="text-lg font-bold text-[#191943]">
           Profile information
@@ -165,11 +151,6 @@ export default function AccountDashboard({
                 className="h-11 rounded-xl border border-[#e4e3e9] px-3 font-normal text-[#191943]"
               />
             </label>
-            {profileError && (
-              <p className="text-sm text-red-700" role="alert">
-                {profileError}
-              </p>
-            )}
             <div className="flex gap-3">
               <button
                 disabled={saving}
@@ -183,7 +164,6 @@ export default function AccountDashboard({
                   setEditing(false);
                   setDisplayName(user.displayName);
                   setAvatarUrl(user.avatarUrl || "");
-                  setProfileError("");
                 }}
                 className="rounded-full border border-[#dedde7] px-5 py-3 text-sm font-bold text-[#353793]"
               >
@@ -336,10 +316,6 @@ export default function AccountDashboard({
           <p className="mt-5 text-sm text-[#77788d]">
             Loading your order history...
           </p>
-        ) : ordersError ? (
-          <p className="mt-5 text-sm text-red-700" role="alert">
-            {ordersError}
-          </p>
         ) : orders.length ? (
           <div className="mt-4 grid gap-3">
             {orders.map((order) => (
@@ -361,7 +337,7 @@ export default function AccountDashboard({
                   {paymentLabel(order.payment_method)}
                 </p>
                 <p className="mt-2 text-sm font-bold text-[#191943]">
-                  {money(Number(order.subtotal_paisa) / 100)}
+                  {money(Number(order.subtotal_taka))}
                 </p>
                 {order.items?.length > 0 && (
                   <p className="mt-1 text-xs text-[#77788d]">
@@ -382,7 +358,7 @@ export default function AccountDashboard({
             here.
           </p>
         )}
-        {!ordersLoading && !ordersError && orders.length > 0 && (
+        {!ordersLoading && orders.length > 0 && (
           <p className="mt-4 text-xs text-[#77788d]">
             This shop currently records checkout method and order status; online
             payment transactions are not processed here.

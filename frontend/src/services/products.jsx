@@ -5,11 +5,11 @@ const ProductsContext = createContext(null);
 const colors = ["navy", "blue", "gold", "olive", "lavender"];
 
 function mapProduct(product) {
-  const price = Number(product.price_paisa) / 100;
+  const price = Number(product.price_taka);
   const originalPrice =
-    product.compare_at_price_paisa == null
+    product.compare_at_price_taka == null
       ? price
-      : Number(product.compare_at_price_paisa) / 100;
+      : Number(product.compare_at_price_taka);
   const kind = /fragrance|perfume|attar|scent/i.test(product.category)
     ? "scent"
     : "shirt";
