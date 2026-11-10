@@ -1,4 +1,10 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const projectRoot = fileURLToPath(new URL("../../", import.meta.url));
+dotenv.config({ path: resolve(projectRoot, ".env.local") });
+dotenv.config({ path: resolve(projectRoot, "backend", ".env") });
 
 const port = Number(process.env.PORT || 4000);
 if (!Number.isInteger(port) || port < 1 || port > 65535)
@@ -10,8 +16,11 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   databaseUrl: process.env.DATABASE_URL,
   webOrigin: process.env.WEB_ORIGIN || "http://localhost:5173",
-  dbSsl: process.env.DB_SSL === "true",
+  dbSsl:
+    process.env.DB_SSL === "true" ||
+    /sslmode=(require|verify-ca|verify-full)/i.test(process.env.DATABASE_URL || ""),
   jwtSecret: process.env.JWT_SECRET || "",
+  migrationDatabaseUrl: process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL,
   sslcommerzStoreId: process.env.SSLCOMMERZ_STORE_ID || "",
   sslcommerzStorePassword: process.env.SSLCOMMERZ_STORE_PASSWORD || "",
   sslcommerzSandbox: process.env.SSLCOMMERZ_SANDBOX !== "false",

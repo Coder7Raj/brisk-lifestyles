@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { pool } from "../src/db/pool.js";
+import { createPool } from "../src/db/pool.js";
+import { config } from "../src/config.js";
+
+const pool = createPool(config.migrationDatabaseUrl);
 
 try {
   for (const file of ["migrations/20261110_prices_in_taka.sql", "schema.sql", "users.sql", "migrations/20261110_sslcommerz.sql"]) {
