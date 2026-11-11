@@ -20,10 +20,13 @@ CREATE TABLE IF NOT EXISTS products (
   compare_at_price_taka numeric(12,2) CHECK (compare_at_price_taka >= price_taka),
   image_url text,
   sizes text[] NOT NULL DEFAULT '{}',
+  stock_by_size jsonb NOT NULL DEFAULT '{}'::jsonb,
   in_stock boolean NOT NULL DEFAULT true,
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_by_size jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE INDEX IF NOT EXISTS products_category_active_idx ON products(category, is_active);
 CREATE INDEX IF NOT EXISTS products_created_at_idx ON products(created_at DESC);

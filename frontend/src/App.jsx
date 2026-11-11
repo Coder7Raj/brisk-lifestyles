@@ -1,4 +1,4 @@
-﻿import {
+import {
   ArrowRight,
   Home,
   LogOut,
@@ -112,7 +112,7 @@ function RoutePage({
   if (route.type === "register")
     return <Register user={user} onAuthenticated={onAuthenticated} />;
   if (route.type === "product") {
-    const product = products.find((item) => item.slug === route.productId);
+    const product = items.find((item) => item.slug === route.productId);
     return (
       <ProductDetails
         product={product}
@@ -406,9 +406,16 @@ function App() {
     const existing = cart.find(
       (item) => item.id === product.id && item.size === size,
     );
+    const availableForSize = product.sizes?.length
+      ? Number(product.stock_by_size?.[size] || 0)
+      : 10;
+    if (!product.in_stock || (product.sizes?.length && !availableForSize)) {
+      toast.error(size ? `${size} is unavailable for this item.` : "This product is out of stock.");
+      return;
+    }
     let notice = `${product.name} added to bag`;
-    if (existing && existing.quantity >= 10)
-      notice = `You can add up to 10 of ${product.name} per size.`;
+    if (existing && existing.quantity >= Math.min(10, availableForSize))
+      notice = `No more ${size || "stock"} available for ${product.name}.`;
     else if (existing)
       notice = `${product.name} is already in your cart. Quantity increased to ${existing.quantity + 1}.`;
     setCart((current) => {
@@ -420,14 +427,14 @@ function App() {
           ...current,
           { ...product, size, quantity: 1, lineId: `${product.id}-${size}` },
         ];
-      if (match.quantity >= 10) return current;
+      if (match.quantity >= Math.min(10, availableForSize)) return current;
       return current.map((item) =>
         item.lineId === match.lineId
           ? { ...item, quantity: item.quantity + 1 }
           : item,
       );
     });
-    if (existing && existing.quantity >= 10) toast.info(notice);
+    if (existing && existing.quantity >= Math.min(10, availableForSize)) toast.info(notice);
     else toast.success(notice);
   };
   const changeQuantity = (lineId, change) =>
@@ -435,6 +442,13 @@ function App() {
       current.flatMap((item) => {
         if (item.lineId !== lineId) return [item];
         const quantity = (item.quantity || 1) + change;
+        const available = item.size
+          ? Number(item.stock_by_size?.[item.size] || 0)
+          : 10;
+        if (quantity > Math.min(10, available)) {
+          toast.info(`No more ${item.size || "stock"} available for ${item.name}.`);
+          return [item];
+        }
         return quantity > 0 ? [{ ...item, quantity }] : [];
       }),
     );

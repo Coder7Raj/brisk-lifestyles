@@ -114,6 +114,7 @@ export function resolveRoute(pathname) {
 }
 
 export function getRouteProducts(route, products, wishlist) {
+  if (route.type === "product") return products;
   if (route.type === "search") {
     const query = route.query.toLocaleLowerCase();
     return query

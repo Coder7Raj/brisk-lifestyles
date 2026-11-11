@@ -59,7 +59,16 @@ export function ProductDetails({ product, saved, onWishlistToggle, onAdd }) {
 
 function ProductInfo({ product, saved, onWishlistToggle, onAdd }) {
   const hasSizes = product.sizes?.length > 0;
+  const hasAvailableStock = product.in_stock && (!hasSizes || product.sizes.some((option) => Number(product.stock_by_size?.[option] || 0) > 0));
   const [size, setSize] = useState("");
+  const selectSize = (option) => {
+    if (!product.in_stock || Number(product.stock_by_size?.[option] || 0) < 1) {
+      setSize("");
+      toast.error(`${option} is unavailable for this item.`);
+      return;
+    }
+    setSize(option);
+  };
   return (
     <div className="detail-info">
       <span className="detail-category">{product.category}</span>
@@ -75,23 +84,25 @@ function ProductInfo({ product, saved, onWishlistToggle, onAdd }) {
         finished and ready for everyday moments or special occasions.
       </p>
       <p className="stock-line">
-        <i /> {product.in_stock ? "In stock · Ready to ship" : "Out of stock"}
+        <i /> {hasAvailableStock ? "In stock · Ready to ship" : "Out of stock"}
       </p>
       {hasSizes && (
         <fieldset className="size-picker">
           <legend>Select a size</legend>
           <div>
-            {product.sizes.map((option) => (
-              <button
+            {product.sizes.map((option) => {
+              const available = product.in_stock && Number(product.stock_by_size?.[option] || 0) > 0;
+              return <button
                 type="button"
                 key={option}
                 aria-pressed={size === option}
-                className={`size-option ${size === option ? "selected" : ""}`}
-                onClick={() => setSize(option)}
+                aria-label={`${option}${available ? "" : ", unavailable"}`}
+                className={`size-option ${size === option ? "selected" : ""} ${available ? "" : "opacity-50"}`}
+                onClick={() => selectSize(option)}
               >
-                {option}
-              </button>
-            ))}
+                {option}{available ? "" : " · Unavailable"}
+              </button>;
+            })}
           </div>
           {!size && (
             <small className="size-hint">

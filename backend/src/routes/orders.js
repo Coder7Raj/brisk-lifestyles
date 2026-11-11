@@ -98,7 +98,10 @@ ordersRouter.patch(
         [status, id],
       );
       if (!result.rowCount) {
-        const existing = await pool.query("SELECT 1 FROM orders WHERE id = $1", [id]);
+        const existing = await pool.query(
+          "SELECT 1 FROM orders WHERE id = $1",
+          [id],
+        );
         return response.status(existing.rowCount ? 409 : 404).json({
           error: existing.rowCount
             ? "This order has already been updated. Refresh and try again."
@@ -124,7 +127,7 @@ ordersRouter.post(
       await client.query("BEGIN");
       const ids = [...new Set(input.items.map((item) => item.productId))];
       const { rows: products } = await client.query(
-        "SELECT id, price_taka, in_stock, sizes FROM products WHERE id = ANY($1::uuid[]) AND is_active = true FOR UPDATE",
+        "SELECT id, price_taka, in_stock, sizes, stock_by_size FROM products WHERE id = ANY($1::uuid[]) AND is_active = true FOR UPDATE",
         [ids],
       );
       const byId = new Map(products.map((item) => [item.id, item]));
@@ -134,17 +137,45 @@ ordersRouter.post(
           .status(400)
           .json({ error: "One or more products are unavailable." });
       }
+      const requestedBySize = new Map();
+      for (const item of input.items) {
+        if (!item.size) continue;
+        const key = `${item.productId}:${item.size}`;
+        requestedBySize.set(key, (requestedBySize.get(key) || 0) + item.quantity);
+      }
+      for (const [key, quantity] of requestedBySize) {
+        const separator = key.lastIndexOf(":");
+        const product = byId.get(key.slice(0, separator));
+        const size = key.slice(separator + 1);
+        if (!product.in_stock || !product.sizes.includes(size) || Number(product.stock_by_size?.[size] || 0) < quantity) {
+          await client.query("ROLLBACK");
+          return response.status(400).json({ error: "A selected product or size is unavailable." });
+        }
+      }
       for (const item of input.items) {
         const product = byId.get(item.productId);
         if (
           !product.in_stock ||
-          (item.size && !product.sizes.includes(item.size))
+          (product.sizes.length && !item.size) ||
+          (!product.sizes.length && item.size)
         ) {
           await client.query("ROLLBACK");
           return response
             .status(400)
             .json({ error: "A selected product or size is unavailable." });
         }
+      }
+      const stockByProduct = new Map();
+      for (const [key, quantity] of requestedBySize) {
+        const separator = key.lastIndexOf(":");
+        const productId = key.slice(0, separator);
+        const size = key.slice(separator + 1);
+        const stock = stockByProduct.get(productId) || { ...(byId.get(productId).stock_by_size || {}) };
+        stock[size] = Number(stock[size] || 0) - quantity;
+        stockByProduct.set(productId, stock);
+      }
+      for (const [productId, stock] of stockByProduct) {
+        await client.query("UPDATE products SET stock_by_size = $1 WHERE id = $2", [JSON.stringify(stock), productId]);
       }
       const subtotal =
         input.items.reduce(
@@ -261,21 +292,17 @@ ordersRouter.post(
           "UPDATE orders SET status = 'cancelled' WHERE id = $1",
           [order.rows[0].id],
         );
-        return response
-          .status(502)
-          .json({
-            error: "Could not start the payment session. Please try again.",
-          });
+        return response.status(502).json({
+          error: "Could not start the payment session. Please try again.",
+        });
       }
       await pool.query(
         "UPDATE orders SET gateway_session_key = $1 WHERE id = $2",
         [session.sessionkey || null, order.rows[0].id],
       );
-      response
-        .status(201)
-        .json({
-          data: { ...order.rows[0], paymentUrl: session.GatewayPageURL },
-        });
+      response.status(201).json({
+        data: { ...order.rows[0], paymentUrl: session.GatewayPageURL },
+      });
     } catch (error) {
       if (client) await client.query("ROLLBACK").catch(() => {});
       next(error);

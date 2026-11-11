@@ -33,6 +33,7 @@ const productFields = {
     .refine(isHttpsUrl, "Use an HTTPS image URL.")
     .nullable(),
   sizes: z.array(z.string().trim().min(1).max(20)).max(30),
+  stock_by_size: z.record(z.string(), z.number().int().min(0).max(100000)),
   in_stock: z.boolean(),
   is_active: z.boolean(),
 };
@@ -52,6 +53,7 @@ export const createProductSchema = z
     compare_at_price_taka: productFields.compare_at_price_taka.optional().default(null),
     image_url: productFields.image_url.optional().default(null),
     sizes: productFields.sizes.optional().default([]),
+    stock_by_size: productFields.stock_by_size.optional().default({}),
     in_stock: productFields.in_stock.optional().default(true),
   })
   .strict()
@@ -62,6 +64,10 @@ export const createProductSchema = z
   .refine((product) => new Set(product.sizes).size === product.sizes.length, {
     path: ["sizes"],
     message: "Sizes must not contain duplicates.",
+  })
+  .refine((product) => Object.keys(product.stock_by_size).every((size) => product.sizes.includes(size)), {
+    path: ["stock_by_size"],
+    message: "Stock quantities must match the listed sizes.",
   });
 
 export const updateProductSchema = z
@@ -70,6 +76,10 @@ export const updateProductSchema = z
   .strict()
   .refine((product) => Object.keys(product).length > 0, {
     message: "Provide at least one product field to update.",
+  })
+  .refine((product) => !product.stock_by_size || !product.sizes || Object.keys(product.stock_by_size).every((size) => product.sizes.includes(size)), {
+    path: ["stock_by_size"],
+    message: "Stock quantities must match the listed sizes.",
   })
   .refine(priceConstraint, {
     path: ["compare_at_price_taka"],

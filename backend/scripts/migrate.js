@@ -6,7 +6,7 @@ import { config } from "../src/config.js";
 const pool = createPool(config.migrationDatabaseUrl);
 
 try {
-  for (const file of ["migrations/20261110_prices_in_taka.sql", "schema.sql", "users.sql", "migrations/20261110_sslcommerz.sql"]) {
+  for (const file of ["migrations/20261110_prices_in_taka.sql", "schema.sql", "migrations/20261111_size_stock.sql", "users.sql", "migrations/20261110_sslcommerz.sql"]) {
     const schemaPath = fileURLToPath(
       new URL(`../../database/${file}`, import.meta.url),
     );

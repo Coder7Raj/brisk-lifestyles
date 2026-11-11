@@ -3,6 +3,16 @@ import { toast } from "react-toastify";
 import { apiRequest } from "../services/api.js";
 import { useProducts } from "../services/products.jsx";
 
+function Pagination({ page, count, onChange }) {
+  const pages = Math.ceil(count / 10);
+  if (pages <= 1) return null;
+  return <nav aria-label="Pagination" className="mt-4 flex items-center justify-center gap-3 text-sm">
+    <button type="button" disabled={page <= 1} onClick={() => onChange(page - 1)} className="rounded-full border px-4 py-2 disabled:opacity-40">Previous</button>
+    <span className="text-[#77788d]">Page {page} of {pages}</span>
+    <button type="button" disabled={page >= pages} onClick={() => onChange(page + 1)} className="rounded-full border px-4 py-2 disabled:opacity-40">Next</button>
+  </nav>;
+}
+
 const emptyProduct = {
   slug: "",
   name: "",
@@ -12,6 +22,7 @@ const emptyProduct = {
   comparePrice: "",
   imageUrl: "",
   sizes: "",
+  stockBySize: {},
   inStock: true,
 };
 const money = (taka) =>
@@ -28,6 +39,7 @@ const toForm = (item) => ({
       : String(item.compare_at_price_taka),
   imageUrl: item.image_url || "",
   sizes: (item.sizes || []).join(", "),
+  stockBySize: item.stock_by_size || {},
   inStock: item.in_stock,
 });
 const slugify = (value) =>
@@ -46,6 +58,8 @@ function payloadFrom(form) {
     throw new Error("Enter a valid product price.");
   if (compare != null && (!Number.isFinite(compare) || compare < price))
     throw new Error("Compare-at price must be at least the regular price.");
+  const sizes = /fragrance|perfume|attar|scent/i.test(form.category) ? [] : form.sizes
+    .toUpperCase().split(",").map((size) => size.trim()).filter(Boolean);
   return {
     slug: slugify(form.slug || form.name),
     name: form.name.trim(),
@@ -54,11 +68,8 @@ function payloadFrom(form) {
     price_taka: price,
     compare_at_price_taka: compare,
     image_url: form.imageUrl.trim() || null,
-    sizes: /fragrance|perfume|attar|scent/i.test(form.category) ? [] : form.sizes
-      .toUpperCase()
-      .split(",")
-      .map((size) => size.trim())
-      .filter(Boolean),
+    sizes,
+    stock_by_size: Object.fromEntries(sizes.map((size) => [size, Number(form.stockBySize[size] || 0)])),
     in_stock: form.inStock,
   };
 }
@@ -78,9 +89,13 @@ export default function AdminDashboard({ user }) {
   const [categoryName, setCategoryName] = useState("");
   const [categoryDescription, setCategoryDescription] = useState("");
   const [categorySaving, setCategorySaving] = useState(false);
+  const [productPage, setProductPage] = useState(1);
+  const [orderPage, setOrderPage] = useState(1);
 
   const load = async () => {
     setLoading(true);
+    setProductPage(1);
+    setOrderPage(1);
     try {
       const [items, categoryItems, orderItems] = await Promise.all([
         apiRequest("/products/admin?limit=100"),
@@ -117,6 +132,8 @@ export default function AdminDashboard({ user }) {
       ),
     [products, categoryFilter, query],
   );
+  const pagedProducts = filtered.slice((productPage - 1) * 10, productPage * 10);
+  const pagedOrders = orders.slice((orderPage - 1) * 10, orderPage * 10);
 
   if (!user)
     return (
@@ -195,6 +212,7 @@ export default function AdminDashboard({ user }) {
           ? [saved, ...current]
           : current.map((item) => (item.id === saved.id ? saved : item)),
       );
+      setProductPage(1);
       await refreshProducts();
       setEditor(null);
       toast.success(editor === "create" ? "Product created." : "Product updated.");
@@ -216,6 +234,7 @@ export default function AdminDashboard({ user }) {
       setProducts((current) =>
         current.filter((product) => product.id !== item.id),
       );
+      setProductPage(1);
       await refreshProducts();
       toast.success(`${item.name} deleted.`);
     } catch (requestError) {
@@ -283,7 +302,7 @@ export default function AdminDashboard({ user }) {
             <p className="py-8 text-center text-sm text-[#77788d]">Loading orders...</p>
           ) : orders.length ? (
             <div className="grid gap-3">
-              {orders.map((order) => {
+              {pagedOrders.map((order) => {
                 const address = order.delivery_address || {};
                 const statusLabel = {
                   paid: "Success",
@@ -347,6 +366,7 @@ export default function AdminDashboard({ user }) {
           ) : (
             <p className="py-8 text-center text-sm text-[#77788d]">No orders yet.</p>
           )}
+          {!loading && orders.length > 0 && <Pagination page={orderPage} count={orders.length} onChange={setOrderPage} />}
         </section>
         <form onSubmit={addCategory} className="mb-6 grid gap-3 rounded-2xl border border-[#e8e7ed] bg-white p-4 sm:grid-cols-[1fr_1fr_auto]">
           <input required maxLength="120" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder="New category name" aria-label="New category name" className="h-11 rounded-xl border border-[#e4e3e9] px-4 text-sm" />
@@ -356,14 +376,14 @@ export default function AdminDashboard({ user }) {
         <div className="mb-6 grid gap-3 rounded-2xl border border-[#e8e7ed] bg-white p-4 sm:grid-cols-[1fr_220px]">
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => { setQuery(event.target.value); setProductPage(1); }}
             placeholder="Search products by name or slug"
             aria-label="Search products"
             className="h-11 rounded-xl border border-[#e4e3e9] px-4 text-sm outline-none focus:border-[#353793]"
           />
           <select
             value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value)}
+            onChange={(event) => { setCategoryFilter(event.target.value); setProductPage(1); }}
             aria-label="Filter by category"
             className="h-11 rounded-xl border border-[#e4e3e9] bg-white px-4 text-sm"
           >
@@ -409,7 +429,7 @@ export default function AdminDashboard({ user }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eeedf1]">
-                  {filtered.map((item) => (
+                  {pagedProducts.map((item) => (
                     <tr key={item.id} className="hover:bg-[#fbfbfd]">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
@@ -482,7 +502,7 @@ export default function AdminDashboard({ user }) {
               </table>
             </div>
             <ul className="divide-y divide-[#eeedf1] lg:hidden">
-              {filtered.map((item) => (
+              {pagedProducts.map((item) => (
                 <li key={item.id} className="min-w-0 p-4 sm:p-5">
                   <div className="flex min-w-0 items-start gap-3">
                     {item.image_url ? (
@@ -515,6 +535,7 @@ export default function AdminDashboard({ user }) {
             </ul>
           </div>
         )}
+        {!loading && filtered.length > 0 && <Pagination page={productPage} count={filtered.length} onChange={setProductPage} />}
         {editor && (
           <div
             className="fixed inset-0 z-[100] flex items-end justify-center bg-[#17173f66] p-0 sm:items-center sm:p-5"
@@ -615,6 +636,12 @@ export default function AdminDashboard({ user }) {
                     className="h-11 rounded-xl border border-[#e4e3e9] px-3 text-sm font-normal text-[#191943]"
                   />
                 </label>}
+                {!/fragrance|perfume|attar|scent/i.test(form.category) && form.sizes.split(",").map((value) => value.trim().toUpperCase()).filter(Boolean).map((size) => (
+                  <label key={size} className="grid gap-1.5 text-xs font-semibold text-[#55566e]">
+                    Quantity for size {size}
+                    <input type="number" min="0" max="100000" step="1" value={form.stockBySize[size] ?? 0} onChange={(event) => setForm({ ...form, stockBySize: { ...form.stockBySize, [size]: event.target.value } })} className="h-11 rounded-xl border border-[#e4e3e9] px-3 text-sm font-normal text-[#191943]" />
+                  </label>
+                ))}
                 <label className="grid gap-1.5 text-xs font-semibold text-[#55566e] sm:col-span-2">
                   Description
                   <textarea

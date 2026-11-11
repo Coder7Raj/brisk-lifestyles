@@ -1,6 +1,7 @@
 ﻿import { Heart } from "lucide-react";
 import { useState } from "react";
 import ProductArt from "./ProductArt.jsx";
+import { toast } from "react-toastify";
 
 export default function ProductCard({
   product,
@@ -10,9 +11,14 @@ export default function ProductCard({
 }) {
   const [size, setSize] = useState("");
   const [message, setMessage] = useState("");
+  const hasAvailableStock = product.in_stock && (!product.sizes.length || product.sizes.some((item) => Number(product.stock_by_size?.[item] || 0) > 0));
   const add = () => {
     if (product.sizes.length && !size) {
       setMessage("Choose a size first");
+      return;
+    }
+    if (product.sizes.length && (!product.in_stock || Number(product.stock_by_size?.[size] || 0) < 1)) {
+      toast.error(`${size} is unavailable for this item.`);
       return;
     }
     onAdd(product, size);
@@ -61,18 +67,28 @@ export default function ProductCard({
           )}
         </div>
         <div className="my-2 text-[10px] text-[#88899a] max-[720px]:my-[6px] max-[720px]:text-[9px]">
-          {product.in_stock ? "In stock" : "Out of stock"}
+          {hasAvailableStock ? "In stock" : "Out of stock"}
         </div>
         {product.sizes.length ? (
           <select
             className="h-[39px] w-full rounded-full border border-[#888ac6] bg-white text-center text-[11px] font-bold text-[#333692] focus:outline focus:outline-2 focus:outline-[#f0c332] max-[720px]:h-[34px] max-[720px]:text-[10px]"
             aria-label={`Choose size for ${product.name}`}
             value={size}
-            onChange={(event) => setSize(event.target.value)}
+            onChange={(event) => {
+              const nextSize = event.target.value;
+              if (nextSize && (!product.in_stock || Number(product.stock_by_size?.[nextSize] || 0) < 1)) {
+                toast.error(`${nextSize} is unavailable for this item.`);
+                setSize("");
+                return;
+              }
+              setSize(nextSize);
+            }}
           >
             <option value="">Choose size</option>
             {product.sizes.map((item) => (
-              <option key={item}>{item}</option>
+              <option key={item} value={item}>
+                {item}{!product.in_stock || Number(product.stock_by_size?.[item] || 0) < 1 ? " — Unavailable" : ""}
+              </option>
             ))}
           </select>
         ) : (

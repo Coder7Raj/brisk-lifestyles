@@ -1,9 +1,9 @@
 import { pool } from "../../db/pool.js";
 
 const columns = `id, slug, name, description, category, price_taka,
-  compare_at_price_taka, image_url, sizes, in_stock, is_active, created_at`;
+  compare_at_price_taka, image_url, sizes, stock_by_size, in_stock, is_active, created_at`;
 const publicColumns = `id, slug, name, description, category, price_taka,
-  compare_at_price_taka, image_url, sizes, in_stock`;
+  compare_at_price_taka, image_url, sizes, stock_by_size, in_stock`;
 const mutableColumns = {
   slug: "slug",
   name: "name",
@@ -13,6 +13,7 @@ const mutableColumns = {
   compare_at_price_taka: "compare_at_price_taka",
   image_url: "image_url",
   sizes: "sizes",
+  stock_by_size: "stock_by_size",
   in_stock: "in_stock",
   is_active: "is_active",
 };
@@ -53,8 +54,8 @@ export async function hasActiveCategory(slug) {
 export async function create(product) {
   const result = await pool.query(
     `INSERT INTO products
-       (slug, name, description, category, price_taka, compare_at_price_taka, image_url, sizes, in_stock)
-     SELECT $1, $2, $3, c.slug, $5, $6, $7, $8, $9
+       (slug, name, description, category, price_taka, compare_at_price_taka, image_url, sizes, stock_by_size, in_stock)
+     SELECT $1, $2, $3, c.slug, $5, $6, $7, $8, $9, $10
      FROM categories c WHERE c.slug = $4 AND c.is_active = true
      RETURNING ${columns}`,
     [
@@ -66,6 +67,7 @@ export async function create(product) {
       product.compare_at_price_taka,
       product.image_url,
       product.sizes,
+      JSON.stringify(product.stock_by_size),
       product.in_stock,
     ],
   );

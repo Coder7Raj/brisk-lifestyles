@@ -7,6 +7,16 @@ const money = (value) =>
 const paymentLabel = (value) =>
   value === "mobile-banking" ? "Mobile banking" : "Cash on delivery";
 
+function Pagination({ page, count, onChange }) {
+  const pages = Math.ceil(count / 10);
+  if (pages <= 1) return null;
+  return <nav aria-label="Pagination" className="mt-4 flex items-center justify-center gap-3 text-sm">
+    <button type="button" disabled={page <= 1} onClick={() => onChange(page - 1)} className="rounded-full border px-4 py-2 disabled:opacity-40">Previous</button>
+    <span className="text-[#77788d]">Page {page} of {pages}</span>
+    <button type="button" disabled={page >= pages} onClick={() => onChange(page + 1)} className="rounded-full border px-4 py-2 disabled:opacity-40">Next</button>
+  </nav>;
+}
+
 export default function AccountDashboard({
   user,
   cart,
@@ -19,6 +29,9 @@ export default function AccountDashboard({
   const [saving, setSaving] = useState(false);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(Boolean(user));
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [wishlistPage, setWishlistPage] = useState(1);
+  const [cartPage, setCartPage] = useState(1);
 
   useEffect(() => {
     setDisplayName(user?.displayName || "");
@@ -218,8 +231,9 @@ export default function AccountDashboard({
             </a>
           </div>
           {wishlist.length ? (
+            <>
             <ul className="mt-4 divide-y divide-[#eeedf1]">
-              {wishlist.map((item) => (
+              {wishlist.slice((wishlistPage - 1) * 10, wishlistPage * 10).map((item) => (
                 <li key={item.id} className="flex items-center gap-3 py-3">
                   {item.image_url ? (
                     <img
@@ -244,6 +258,8 @@ export default function AccountDashboard({
                 </li>
               ))}
             </ul>
+            <Pagination page={wishlistPage} count={wishlist.length} onChange={setWishlistPage} />
+            </>
           ) : (
             <p className="mt-4 text-sm text-[#77788d]">
               Your wishlist is empty. Save items you like and they will show up
@@ -262,8 +278,9 @@ export default function AccountDashboard({
             </button>
           </div>
           {cart.length ? (
+            <>
             <ul className="mt-4 divide-y divide-[#eeedf1]">
-              {cart.map((item) => (
+              {cart.slice((cartPage - 1) * 10, cartPage * 10).map((item) => (
                 <li
                   key={item.lineId}
                   className="flex items-center justify-between gap-3 py-3 text-sm"
@@ -281,6 +298,8 @@ export default function AccountDashboard({
                 </li>
               ))}
             </ul>
+            <Pagination page={cartPage} count={cart.length} onChange={setCartPage} />
+            </>
           ) : (
             <p className="mt-4 text-sm text-[#77788d]">
               Your bag is empty right now.
@@ -317,8 +336,9 @@ export default function AccountDashboard({
             Loading your order history...
           </p>
         ) : orders.length ? (
+          <>
           <div className="mt-4 grid gap-3">
-            {orders.map((order) => (
+            {orders.slice((ordersPage - 1) * 10, ordersPage * 10).map((order) => (
               <article
                 key={order.id}
                 className="rounded-xl border border-[#eeedf1] p-4"
@@ -356,6 +376,8 @@ export default function AccountDashboard({
               </article>
             ))}
           </div>
+          <Pagination page={ordersPage} count={orders.length} onChange={setOrdersPage} />
+          </>
         ) : (
           <p className="mt-5 text-sm text-[#77788d]">
             No orders or payment records yet. Completed checkouts will appear
