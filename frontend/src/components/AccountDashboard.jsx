@@ -20,6 +20,7 @@ function Pagination({ page, count, onChange }) {
 export default function AccountDashboard({
   user,
   cart,
+  onRemoveFromCart,
   wishlist,
   onProfileUpdated,
 }) {
@@ -295,6 +296,14 @@ export default function AccountDashboard({
                   <b className="shrink-0 text-[#353793]">
                     {money(item.price * (item.quantity || 1))}
                   </b>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveFromCart(item.lineId)}
+                    aria-label={`Remove ${item.name} from bag`}
+                    className="shrink-0 rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50"
+                  >
+                    Remove
+                  </button>
                 </li>
               ))}
             </ul>

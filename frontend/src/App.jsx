@@ -80,6 +80,7 @@ function RoutePage({
   onAuthenticated,
   onProfileUpdated,
   cart,
+  onRemoveFromCart,
   onPlaceOrder,
   loading,
 }) {
@@ -105,6 +106,7 @@ function RoutePage({
       <AccountDashboard
         user={user}
         cart={cart}
+        onRemoveFromCart={onRemoveFromCart}
         wishlist={wishlist}
         onProfileUpdated={onProfileUpdated}
       />
@@ -452,6 +454,10 @@ function App() {
         return quantity > 0 ? [{ ...item, quantity }] : [];
       }),
     );
+  const removeFromCart = (lineId) => {
+    setCart((current) => current.filter((item) => item.lineId !== lineId));
+    toast.info("Item removed from your bag.");
+  };
   const toggleWishlist = (product) => {
     if (!user) {
       toast.info("Sign in to save products to your wishlist.");
@@ -577,6 +583,7 @@ function App() {
             onAuthenticated={handleAuthenticated}
             onProfileUpdated={handleProfileUpdated}
             cart={cart}
+            onRemoveFromCart={removeFromCart}
             onPlaceOrder={placeOrder}
             loading={productsLoading}
           />
@@ -1108,6 +1115,14 @@ function App() {
                           onClick={() => changeQuantity(item.lineId, 1)}
                         >
                           <Plus size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          className="grid h-8 w-8 place-items-center rounded-full text-red-600 hover:bg-red-50"
+                          aria-label={`Remove ${item.name} from bag`}
+                          onClick={() => removeFromCart(item.lineId)}
+                        >
+                          <X size={15} />
                         </button>
                       </div>
                     </article>
