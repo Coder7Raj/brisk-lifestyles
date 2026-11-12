@@ -3,22 +3,48 @@ import { toast } from "react-toastify";
 import { apiRequest } from "../services/api.js";
 
 const money = (value) =>
-  String.fromCharCode(2547) + Number(value || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  String.fromCharCode(2547) +
+  Number(value || 0).toLocaleString("en-BD", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 const paymentLabel = (value) =>
   value === "mobile-banking" ? "Mobile banking" : "Cash on delivery";
 
 function Pagination({ page, count, onChange }) {
   const pages = Math.ceil(count / 10);
   if (pages <= 1) return null;
-  return <nav aria-label="Pagination" className="mt-4 flex items-center justify-center gap-3 text-sm">
-    <button type="button" disabled={page <= 1} onClick={() => onChange(page - 1)} className="rounded-full border px-4 py-2 disabled:opacity-40">Previous</button>
-    <span className="text-[#77788d]">Page {page} of {pages}</span>
-    <button type="button" disabled={page >= pages} onClick={() => onChange(page + 1)} className="rounded-full border px-4 py-2 disabled:opacity-40">Next</button>
-  </nav>;
+  return (
+    <nav
+      aria-label="Pagination"
+      className="mt-4 flex items-center justify-center gap-3 text-sm"
+    >
+      <button
+        type="button"
+        disabled={page <= 1}
+        onClick={() => onChange(page - 1)}
+        className="rounded-full border px-4 py-2 disabled:opacity-40"
+      >
+        Previous
+      </button>
+      <span className="text-[#77788d]">
+        Page {page} of {pages}
+      </span>
+      <button
+        type="button"
+        disabled={page >= pages}
+        onClick={() => onChange(page + 1)}
+        className="rounded-full border px-4 py-2 disabled:opacity-40"
+      >
+        Next
+      </button>
+    </nav>
+  );
 }
 
 export default function AccountDashboard({
   user,
+  onLogout,
   cart,
   onRemoveFromCart,
   wishlist,
@@ -104,6 +130,23 @@ export default function AccountDashboard({
 
   return (
     <div className="mx-auto min-h-[65vh] max-w-[1100px] px-4 py-10 sm:px-7">
+      {/* <div className="mb-5 flex justify-end gap-2">
+        <a
+          href="/"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#e7e7eb] px-3 text-sm font-semibold text-[#55566c] transition hover:bg-[#f7f7f9]"
+        >
+          <Home size={17} aria-hidden="true" />
+          Home
+        </a>
+        <button
+          type="button"
+          onClick={onLogout}
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#e7e7eb] bg-white px-3 text-sm font-semibold text-[#55566c] transition hover:bg-[#f7f7f9]"
+        >
+          <LogOut size={17} aria-hidden="true" />
+          Sign out
+        </button>
+      </div> */}
       <p className="text-xs text-[#77788d]">
         <a href="/">Home</a> / My account
       </p>
@@ -233,33 +276,39 @@ export default function AccountDashboard({
           </div>
           {wishlist.length ? (
             <>
-            <ul className="mt-4 divide-y divide-[#eeedf1]">
-              {wishlist.slice((wishlistPage - 1) * 10, wishlistPage * 10).map((item) => (
-                <li key={item.id} className="flex items-center gap-3 py-3">
-                  {item.image_url ? (
-                    <img
-                      src={item.image_url}
-                      alt=""
-                      className="h-12 w-12 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="grid h-12 w-12 place-items-center rounded-lg bg-[#eeeff9] text-xs font-bold text-[#353793]">
-                      {item.name.slice(0, 1)}
-                    </div>
-                  )}
-                  <a
-                    href={`/product/${item.slug}`}
-                    className="min-w-0 flex-1 truncate text-sm font-semibold text-[#191943]"
-                  >
-                    {item.name}
-                  </a>
-                  <span className="text-sm font-bold text-[#353793]">
-                    {money(item.price)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <Pagination page={wishlistPage} count={wishlist.length} onChange={setWishlistPage} />
+              <ul className="mt-4 divide-y divide-[#eeedf1]">
+                {wishlist
+                  .slice((wishlistPage - 1) * 10, wishlistPage * 10)
+                  .map((item) => (
+                    <li key={item.id} className="flex items-center gap-3 py-3">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt=""
+                          className="h-12 w-12 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-12 w-12 place-items-center rounded-lg bg-[#eeeff9] text-xs font-bold text-[#353793]">
+                          {item.name.slice(0, 1)}
+                        </div>
+                      )}
+                      <a
+                        href={`/product/${item.slug}`}
+                        className="min-w-0 flex-1 truncate text-sm font-semibold text-[#191943]"
+                      >
+                        {item.name}
+                      </a>
+                      <span className="text-sm font-bold text-[#353793]">
+                        {money(item.price)}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+              <Pagination
+                page={wishlistPage}
+                count={wishlist.length}
+                onChange={setWishlistPage}
+              />
             </>
           ) : (
             <p className="mt-4 text-sm text-[#77788d]">
@@ -280,34 +329,38 @@ export default function AccountDashboard({
           </div>
           {cart.length ? (
             <>
-            <ul className="mt-4 divide-y divide-[#eeedf1]">
-              {cart.slice((cartPage - 1) * 10, cartPage * 10).map((item) => (
-                <li
-                  key={item.lineId}
-                  className="flex items-center justify-between gap-3 py-3 text-sm"
-                >
-                  <span className="min-w-0 truncate font-semibold text-[#191943]">
-                    {item.name}
-                    {item.size
-                      ? ` ${String.fromCharCode(183)} ${item.size}`
-                      : ""}{" "}
-                    ${String.fromCharCode(215)} {item.quantity || 1}
-                  </span>
-                  <b className="shrink-0 text-[#353793]">
-                    {money(item.price * (item.quantity || 1))}
-                  </b>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveFromCart(item.lineId)}
-                    aria-label={`Remove ${item.name} from bag`}
-                    className="shrink-0 rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50"
+              <ul className="mt-4 divide-y divide-[#eeedf1]">
+                {cart.slice((cartPage - 1) * 10, cartPage * 10).map((item) => (
+                  <li
+                    key={item.lineId}
+                    className="flex items-center justify-between gap-3 py-3 text-sm"
                   >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <Pagination page={cartPage} count={cart.length} onChange={setCartPage} />
+                    <span className="min-w-0 truncate font-semibold text-[#191943]">
+                      {item.name}
+                      {item.size
+                        ? ` ${String.fromCharCode(183)} ${item.size}`
+                        : ""}{" "}
+                      ${String.fromCharCode(215)} {item.quantity || 1}
+                    </span>
+                    <b className="shrink-0 text-[#353793]">
+                      {money(item.price * (item.quantity || 1))}
+                    </b>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveFromCart(item.lineId)}
+                      aria-label={`Remove ${item.name} from bag`}
+                      className="shrink-0 rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <Pagination
+                page={cartPage}
+                count={cart.length}
+                onChange={setCartPage}
+              />
             </>
           ) : (
             <p className="mt-4 text-sm text-[#77788d]">
@@ -346,46 +399,52 @@ export default function AccountDashboard({
           </p>
         ) : orders.length ? (
           <>
-          <div className="mt-4 grid gap-3">
-            {orders.slice((ordersPage - 1) * 10, ordersPage * 10).map((order) => (
-              <article
-                key={order.id}
-                className="rounded-xl border border-[#eeedf1] p-4"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <b className="text-sm text-[#191943]">
-                    Order {order.id.slice(0, 8).toUpperCase()}
-                  </b>
-                  <span className="rounded-full bg-[#f4f3f8] px-3 py-1 text-xs font-semibold capitalize text-[#353793]">
-                    {{
-                      paid: "Success",
-                      cancelled: "Cancelled",
-                      fulfilled: "Completed",
-                    }[order.status] || order.status}
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-[#77788d]">
-                  {new Date(order.created_at).toLocaleDateString("en-BD")}{" "}
-                  {String.fromCharCode(183)}{" "}
-                  {paymentLabel(order.payment_method)}
-                </p>
-                <p className="mt-2 text-sm font-bold text-[#191943]">
-                  {money(Number(order.subtotal_taka))}
-                </p>
-                {order.items?.length > 0 && (
-                  <p className="mt-1 text-xs text-[#77788d]">
-                    {order.items
-                      .map(
-                        (item) =>
-                          `${item.name} ${String.fromCharCode(215)} ${item.quantity}`,
-                      )
-                      .join(", ")}
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
-          <Pagination page={ordersPage} count={orders.length} onChange={setOrdersPage} />
+            <div className="mt-4 grid gap-3">
+              {orders
+                .slice((ordersPage - 1) * 10, ordersPage * 10)
+                .map((order) => (
+                  <article
+                    key={order.id}
+                    className="rounded-xl border border-[#eeedf1] p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <b className="text-sm text-[#191943]">
+                        Order {order.id.slice(0, 8).toUpperCase()}
+                      </b>
+                      <span className="rounded-full bg-[#f4f3f8] px-3 py-1 text-xs font-semibold capitalize text-[#353793]">
+                        {{
+                          paid: "Success",
+                          cancelled: "Cancelled",
+                          fulfilled: "Completed",
+                        }[order.status] || order.status}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-[#77788d]">
+                      {new Date(order.created_at).toLocaleDateString("en-BD")}{" "}
+                      {String.fromCharCode(183)}{" "}
+                      {paymentLabel(order.payment_method)}
+                    </p>
+                    <p className="mt-2 text-sm font-bold text-[#191943]">
+                      {money(Number(order.subtotal_taka))}
+                    </p>
+                    {order.items?.length > 0 && (
+                      <p className="mt-1 text-xs text-[#77788d]">
+                        {order.items
+                          .map(
+                            (item) =>
+                              `${item.name} ${String.fromCharCode(215)} ${item.quantity}`,
+                          )
+                          .join(", ")}
+                      </p>
+                    )}
+                  </article>
+                ))}
+            </div>
+            <Pagination
+              page={ordersPage}
+              count={orders.length}
+              onChange={setOrdersPage}
+            />
           </>
         ) : (
           <p className="mt-5 text-sm text-[#77788d]">

@@ -264,6 +264,15 @@ export default function Header({
                   My dashboard
                 </a>
               )}
+              {user?.role === "admin" && (
+                <a
+                  className="flex items-center justify-center rounded-xl border border-[#dedde7] px-3 py-3 text-sm font-semibold text-[#353793]"
+                  href="/admin"
+                  onClick={() => setMobile(false)}
+                >
+                  Product management
+                </a>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <a
                   className="flex items-center justify-center gap-2 rounded-xl bg-[#353793] px-3 py-3 text-sm font-semibold text-white"

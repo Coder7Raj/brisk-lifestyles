@@ -2,6 +2,7 @@ import {
   ArrowRight,
   Home,
   LogOut,
+  Menu,
   Minus,
   Plus,
   ShoppingBag,
@@ -72,11 +73,14 @@ const reviewExamples = [
 
 function RoutePage({
   route,
+  adminNavOpen,
+  onAdminNavClose,
   products: items,
   wishlist,
   onAdd,
   onWishlistToggle,
   user,
+  onLogout,
   onAuthenticated,
   onProfileUpdated,
   cart,
@@ -100,11 +104,19 @@ function RoutePage({
     return <BriskLoader label="Loading your collection" fullScreen />;
   if (route.type === "login")
     return <Login user={user} onAuthenticated={onAuthenticated} />;
-  if (route.type === "admin") return <AdminDashboard user={user} />;
+  if (route.type === "admin")
+    return (
+      <AdminDashboard
+        user={user}
+        adminNavOpen={adminNavOpen}
+        onAdminNavClose={onAdminNavClose}
+      />
+    );
   if (route.type === "account")
     return (
       <AccountDashboard
         user={user}
+        onLogout={onLogout}
         cart={cart}
         onRemoveFromCart={onRemoveFromCart}
         wishlist={wishlist}
@@ -222,28 +234,71 @@ function RoutePage({
   );
 }
 
-function AdminBar({ onLogout }) {
+function AdminBar({ user, onLogout, onToggleSidebar, adminNavOpen }) {
   return (
-    <header className="flex justify-between h-14 w-full min-w-0 items-center border-b border-[#e9e6df] bg-white lg:px-28 px-3 sm:h-16 sm:px-6">
-      <a
-        href="/"
-        aria-label="Home"
-        className="inline-flex items-center gap-2 rounded-full border border-[#e4e2df] px-4 py-2 text-sm font-semibold text-[#353793]"
-      >
-        <Home size={17} /> Home
-      </a>
-      <button
-        onClick={onLogout}
-        aria-label="Sign out"
-        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-[#e4e2df] bg-white px-4 text-sm font-semibold text-[#353793] hover:bg-[#f7f6fa]"
-      >
-        <LogOut size={17} />
-        <span>Sign out</span>
-      </button>
+    <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center border-b border-[#e7e7eb] bg-white">
+      <div className="flex h-full w-auto shrink-0 items-center gap-3 px-4 sm:px-6 lg:w-64 lg:px-6 max-[480px]:gap-1 max-[480px]:px-2">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          aria-label="Toggle admin navigation"
+          aria-expanded={adminNavOpen}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[#55566c] transition hover:bg-[#f4f4f7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#353793] lg:hidden"
+        >
+          <Menu size={21} />
+        </button>
+        <a
+          href="/"
+          aria-label="Brisk Lifestyles home"
+          className="min-w-0 leading-tight"
+        >
+          <span className="block text-lg font-extrabold tracking-tight text-[#20213d]">
+            Brisk
+          </span>
+          <span className="block text-[11px] text-[#77788d] max-[480px]:hidden">
+            Lifestyles · Admin
+          </span>
+        </a>
+      </div>
+      <div className="flex min-w-0 flex-1 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 max-[480px]:gap-1 max-[480px]:px-2">
+        <div className="hidden min-w-0 lg:block">
+          <h1 className="truncate text-base font-bold text-[#20213d]">
+            Store management
+          </h1>
+          <p className="truncate text-xs text-[#77788d]">
+            Manage your catalog and customer orders
+          </p>
+        </div>
+        <div className="ml-auto flex items-center gap-3 max-[480px]:gap-1">
+          <a
+            href="/"
+            aria-label="View storefront"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-[#e7e7eb] px-2 text-xs font-semibold text-[#55566c] transition hover:bg-[#f7f7f9] sm:gap-2 sm:px-3 sm:text-sm max-[480px]:gap-1 max-[480px]:px-1.5"
+          >
+            <Home size={17} />
+            <span>Home</span>
+          </a>
+          <div className="hidden text-right lg:block">
+            <p className="max-w-40 truncate text-sm font-semibold text-[#292a49]">
+              {user?.name || "Administrator"}
+            </p>
+            <p className="max-w-40 truncate text-xs text-[#77788d]">
+              {user?.email}
+            </p>
+          </div>
+          <button
+            onClick={onLogout}
+            aria-label="Sign out"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#e7e7eb] bg-white px-3 text-sm font-semibold text-[#55566c] transition hover:bg-[#f7f7f9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#353793] max-[480px]:gap-1 max-[480px]:px-2 max-[480px]:text-xs"
+          >
+            <LogOut size={17} />
+            <span>Sign out</span>
+          </button>
+        </div>
+      </div>
     </header>
   );
 }
-
 function App() {
   const {
     products,
@@ -257,6 +312,7 @@ function App() {
   );
   const successfulPaymentReturn = paymentReturn === "success";
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
   const readWishlist = (userId) => {
     try {
@@ -286,8 +342,19 @@ function App() {
     setUser(nextUser);
   };
   const handleProfileUpdated = (nextUser) => setUser(nextUser);
+  const handleLogout = async () => {
+    try {
+      await apiRequest("/auth/logout", { method: "POST" });
+      setUser(null);
+      setWishlist([]);
+      toast.success("You have signed out.");
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
   const { pathname } = useRouter();
   const [cartOpen, setCartOpen] = useState(false);
+  const [adminNavOpen, setAdminNavOpen] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
   const [showTop, setShowTop] = useState(false);
   const route = resolveRoute(pathname.split("?")[0]);
@@ -305,7 +372,8 @@ function App() {
       .catch(() => {
         setUser(null);
         setWishlist([]);
-      });
+      })
+      .finally(() => setAuthLoading(false));
     return () => setAuthExpiredHandler(() => {});
   }, []);
   useEffect(() => {
@@ -412,7 +480,11 @@ function App() {
       ? Number(product.stock_by_size?.[size] || 0)
       : 10;
     if (!product.in_stock || (product.sizes?.length && !availableForSize)) {
-      toast.error(size ? `${size} is unavailable for this item.` : "This product is out of stock.");
+      toast.error(
+        size
+          ? `${size} is unavailable for this item.`
+          : "This product is out of stock.",
+      );
       return;
     }
     let notice = `${product.name} added to bag`;
@@ -436,7 +508,8 @@ function App() {
           : item,
       );
     });
-    if (existing && existing.quantity >= Math.min(10, availableForSize)) toast.info(notice);
+    if (existing && existing.quantity >= Math.min(10, availableForSize))
+      toast.info(notice);
     else toast.success(notice);
   };
   const changeQuantity = (lineId, change) =>
@@ -448,7 +521,9 @@ function App() {
           ? Number(item.stock_by_size?.[item.size] || 0)
           : 10;
         if (quantity > Math.min(10, available)) {
-          toast.info(`No more ${item.size || "stock"} available for ${item.name}.`);
+          toast.info(
+            `No more ${item.size || "stock"} available for ${item.name}.`,
+          );
           return [item];
         }
         return quantity > 0 ? [{ ...item, quantity }] : [];
@@ -532,21 +607,17 @@ function App() {
     />
   );
 
+  if (authLoading && ["admin", "account"].includes(route.type))
+    return <BriskLoader label="Checking your account" fullScreen />;
+
   return (
     <div id="top">
       {route.type === "admin" ? (
         <AdminBar
           user={user}
-          onLogout={async () => {
-            try {
-              await apiRequest("/auth/logout", { method: "POST" });
-              setUser(null);
-              setWishlist([]);
-              toast.success("You have signed out.");
-            } catch (error) {
-              toast.error(error.message);
-            }
-          }}
+          adminNavOpen={adminNavOpen}
+          onToggleSidebar={() => setAdminNavOpen((open) => !open)}
+          onLogout={handleLogout}
         />
       ) : (
         <Header
@@ -554,16 +625,7 @@ function App() {
           wishlistCount={wishlist.length}
           user={user}
           onCart={() => setCartOpen(true)}
-          onLogout={async () => {
-            try {
-              await apiRequest("/auth/logout", { method: "POST" });
-              setUser(null);
-              setWishlist([]);
-              toast.success("You have signed out.");
-            } catch (error) {
-              toast.error(error.message);
-            }
-          }}
+          onLogout={handleLogout}
           onSearch={(query) => {
             const normalized = query.trim();
             if (normalized)
@@ -575,11 +637,14 @@ function App() {
         {route.type !== "home" ? (
           <RoutePage
             route={route}
+            adminNavOpen={adminNavOpen}
+            onAdminNavClose={() => setAdminNavOpen(false)}
             products={routeProducts}
             wishlist={wishlist}
             onAdd={addToCart}
             onWishlistToggle={toggleWishlist}
             user={user}
+            onLogout={handleLogout}
             onAuthenticated={handleAuthenticated}
             onProfileUpdated={handleProfileUpdated}
             cart={cart}
@@ -1081,7 +1146,7 @@ function App() {
                       <div className="flex flex-col gap-[5px] text-xs">
                         <b className="font-bold">{item.name}</b>
                         <span>
-                          {item.size ? `Size ${item.size} Â· ` : ""}In stock
+                          {item.size ? `Size ${item.size} - ` : ""}In stock
                         </span>
                         <strong className="text-[13px]">
                           ৳

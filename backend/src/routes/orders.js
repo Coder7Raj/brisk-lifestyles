@@ -55,6 +55,27 @@ ordersRouter.get("/mine", requireAuth, async (request, response, next) => {
 });
 
 ordersRouter.get(
+  "/admin/stats",
+  requireAuth,
+  requireRole("admin"),
+  async (request, response, next) => {
+    try {
+      const result = await pool.query(
+        `SELECT
+           (SELECT COUNT(*)::int FROM products) AS total_products,
+           (SELECT COALESCE(SUM(subtotal_taka), 0)
+            FROM orders WHERE status IN ('paid', 'fulfilled')) AS total_payments,
+           (SELECT COUNT(*)::int FROM orders WHERE status = 'cancelled') AS cancelled_orders,
+           (SELECT COUNT(*)::int FROM identity.users) AS total_users`,
+      );
+      response.json({ data: result.rows[0] });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+ordersRouter.get(
   "/admin",
   requireAuth,
   requireRole("admin"),
@@ -141,28 +162,54 @@ ordersRouter.post(
       for (const item of input.items) {
         if (!item.size) continue;
         const key = `${item.productId}:${item.size}`;
-        requestedBySize.set(key, (requestedBySize.get(key) || 0) + item.quantity);
+        requestedBySize.set(
+          key,
+          (requestedBySize.get(key) || 0) + item.quantity,
+        );
       }
       for (const [key, quantity] of requestedBySize) {
         const separator = key.lastIndexOf(":");
         const product = byId.get(key.slice(0, separator));
         const size = key.slice(separator + 1);
-        if (!product.in_stock || !product.sizes.includes(size) || Number(product.stock_by_size?.[size] || 0) < quantity) {
+        if (!product.in_stock) {
           await client.query("ROLLBACK");
-          return response.status(400).json({ error: "A selected product or size is unavailable." });
+          return response
+            .status(400)
+            .json({ error: `${product.name} is out of stock.` });
+        }
+        if (!product.sizes.includes(size)) {
+          await client.query("ROLLBACK");
+          return response
+            .status(400)
+            .json({ error: `${product.name} is unavailable in size ${size}.` });
+        }
+        const available = Number(product.stock_by_size?.[size] || 0);
+        if (available < quantity) {
+          await client.query("ROLLBACK");
+          return response.status(400).json({
+            error: `${product.name} (size ${size}) has only ${available} in stock, but ${quantity} requested.`,
+          });
         }
       }
       for (const item of input.items) {
         const product = byId.get(item.productId);
-        if (
-          !product.in_stock ||
-          (product.sizes.length && !item.size) ||
-          (!product.sizes.length && item.size)
-        ) {
+        if (!product.in_stock) {
           await client.query("ROLLBACK");
           return response
             .status(400)
-            .json({ error: "A selected product or size is unavailable." });
+            .json({ error: `${product.name} is out of stock.` });
+        }
+        if (product.sizes.length && !item.size) {
+          await client.query("ROLLBACK");
+          return response.status(400).json({
+            error: `Select a size for ${product.name} before placing your order.`,
+          });
+        }
+        if (!product.sizes.length && item.size) {
+          await client.query("ROLLBACK");
+          return response.status(400).json({
+            error: `${product.name} does not have selectable sizes. Remove it from your bag and add it again.`,
+          });
         }
       }
       const stockByProduct = new Map();
@@ -170,12 +217,17 @@ ordersRouter.post(
         const separator = key.lastIndexOf(":");
         const productId = key.slice(0, separator);
         const size = key.slice(separator + 1);
-        const stock = stockByProduct.get(productId) || { ...(byId.get(productId).stock_by_size || {}) };
+        const stock = stockByProduct.get(productId) || {
+          ...(byId.get(productId).stock_by_size || {}),
+        };
         stock[size] = Number(stock[size] || 0) - quantity;
         stockByProduct.set(productId, stock);
       }
       for (const [productId, stock] of stockByProduct) {
-        await client.query("UPDATE products SET stock_by_size = $1 WHERE id = $2", [JSON.stringify(stock), productId]);
+        await client.query(
+          "UPDATE products SET stock_by_size = $1 WHERE id = $2",
+          [JSON.stringify(stock), productId],
+        );
       }
       const subtotal =
         input.items.reduce(

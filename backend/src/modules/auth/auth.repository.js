@@ -8,7 +8,12 @@ export async function findUserByEmail(email) {
   return result.rows[0] || null;
 }
 
-export async function createUser({ displayName, email, avatarUrl, passwordHash }) {
+export async function createUser({
+  displayName,
+  email,
+  avatarUrl,
+  passwordHash,
+}) {
   const result = await pool.query(
     `INSERT INTO identity.users (display_name, email, avatar_url, password_hash)
      VALUES ($1, $2, $3, $4)
@@ -65,8 +70,21 @@ export async function revokeSession(tokenHash) {
 
 export async function listUsers() {
   const result = await pool.query(
-    `SELECT id, display_name, email, avatar_url, role, is_active, created_at
-     FROM identity.users ORDER BY created_at DESC LIMIT 200`,
+    `SELECT u.id, u.display_name, u.email, u.avatar_url, u.role,
+            u.is_active, u.created_at,
+            COALESCE(purchases.order_count, 0)::int AS order_count,
+            COALESCE(purchases.products_purchased, 0)::int AS products_purchased
+     FROM identity.users u
+     LEFT JOIN (
+       SELECT o.user_id,
+              COUNT(DISTINCT o.id) FILTER (WHERE o.status <> 'cancelled') AS order_count,
+              COALESCE(SUM(oi.quantity) FILTER (WHERE o.status IN ('paid', 'fulfilled')), 0) AS products_purchased
+       FROM orders o
+       LEFT JOIN order_items oi ON oi.order_id = o.id
+       WHERE o.user_id IS NOT NULL
+       GROUP BY o.user_id
+     ) purchases ON purchases.user_id = u.id
+     ORDER BY u.created_at DESC`,
   );
   return result.rows;
 }
